@@ -83,7 +83,7 @@ def atlas_env_from_dotenv() -> dict[str, str]:
     client_id = os.environ["CLIENT_ID"]
     tenant_id = os.environ["TENANT_ID"]
     token_scope = os.environ["TOKEN_SCOPE"]
-    subscription_key = os.environ["SUBSCRIPTION_KEY"]
+    subscription_key = os.environ["MSF_SUBSCRIPTION_KEY"]
     base_url = os.environ["ANTHROPIC_BASE_URL"]
     auth_type = os.environ.get("AUTHENTICATION_TYPE_VALUE", "EntraID")
     model = os.environ["ANTHROPIC_MODEL"]
@@ -95,7 +95,7 @@ def atlas_env_from_dotenv() -> dict[str, str]:
         "ANTHROPIC_BASE_URL": base_url.rstrip("/"),
         "ANTHROPIC_AUTH_TOKEN": bearer_token,
         "ANTHROPIC_CUSTOM_HEADERS": (
-            f"TokenCollector-Subscription-Key: {subscription_key}\nAtlasAuthType: {auth_type}"
+            f"MSF-Subscription-Key: {subscription_key}\nAtlasAuthType: {auth_type}"
         ),
         "ANTHROPIC_MODEL": model,
         # Deliberately never set ANTHROPIC_API_KEY here: if both are present

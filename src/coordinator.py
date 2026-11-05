@@ -50,7 +50,7 @@ async def _call_subagent(
 ) -> str:
     """The one seam that talks to the Claude Agent SDK. Returns the
     subagent's final text response."""
-    from claude_agent_sdk import ClaudeAgentOptions, query  # type: ignore
+    from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, TextBlock, query  # type: ignore
 
     allowed_tools = []
     mcp_servers: dict[str, Any] = {}
@@ -69,11 +69,17 @@ async def _call_subagent(
         allowed_tools=allowed_tools,
     )
 
+    # AssistantMessage.content is a list of content blocks (TextBlock,
+    # ThinkingBlock, ToolUseBlock, ToolResultBlock); only TextBlock carries
+    # the model's text output. There is no flat `.text` on the message
+    # itself — that was an earlier, incorrect assumption that silently
+    # returned "" on every call. See project memory for detail.
     chunks: list[str] = []
     async for message in query(prompt=user_message, options=options):
-        text = getattr(message, "text", None)
-        if text:
-            chunks.append(text)
+        if isinstance(message, AssistantMessage):
+            for block in message.content:
+                if isinstance(block, TextBlock):
+                    chunks.append(block.text)
     return "".join(chunks)
 
 

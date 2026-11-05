@@ -9,10 +9,10 @@ pipeline design and `DECISIONS.md` for judgment calls and tradeoffs.
 
 Design finalized; corpus-handling, citation-validation, and pack-rendering
 code written and unit-tested (no API key required for these — see Testing
-below). Live end-to-end wiring against the Claude Agent SDK is written but
-**not yet exercised against a real model**: it is blocked on resolving a 401
-("missing subscription key") from the organization's Atlas gateway. See the
-"Auth" section below before attempting a live run.
+below). Atlas gateway authentication is confirmed working end to end
+(`atlas_client.py` returns a real response). Live end-to-end wiring against
+the Claude Agent SDK (`src/coordinator.py`) is written but **not yet
+exercised against a real model** — that's the current focus.
 
 ## Setup
 
@@ -36,7 +36,7 @@ Required values:
 | `CLIENT_ID` | Entra ID app registration client ID |
 | `TENANT_ID` | Entra ID tenant ID |
 | `TOKEN_SCOPE` | OAuth scope requested for the bearer token |
-| `SUBSCRIPTION_KEY` | Atlas gateway subscription key |
+| `MSF_SUBSCRIPTION_KEY` | Atlas gateway subscription key (sent as the `MSF-Subscription-Key` header) |
 | `ANTHROPIC_BASE_URL` | Atlas gateway root URL (no trailing `/v1/messages`) |
 | `AUTHENTICATION_TYPE_VALUE` | `EntraID` |
 | `ANTHROPIC_MODEL` | Atlas-side model identifier |
@@ -83,11 +83,16 @@ bare page number, ref-not-found, doc-never-analyzed), and pack rendering
 (no-conflict sentence, conflict section, gap-reason distinctions, sources
 table including failed/empty statuses, duplicate-source detection).
 
-## Known open issue
+## Auth notes
 
-Atlas gateway returns a 401 "missing subscription key" even with all `.env`
-values present and well-formed. Most likely causes (not yet confirmed):
-the `SUBSCRIPTION_KEY` may not be provisioned for this specific account, or
-the header name `TokenCollector-Subscription-Key` may not match this
-tenant's actual gateway configuration. Flagged for SME/teammate follow-up per
-the hackathon's own guidance on escalating environment/auth issues.
+Atlas authentication is confirmed working. The original teammate-provided
+sample used a header name (`TokenCollector-Subscription-Key`) that didn't
+match this tenant's actual gateway configuration, which produced a 401
+"missing subscription key" error; the correct header for this tenant is
+`MSF-Subscription-Key`, and `.env`/code have been updated accordingly
+(`SUBSCRIPTION_KEY` → `MSF_SUBSCRIPTION_KEY`).
+
+If `python atlas_client.py`'s browser-based login ever hangs (e.g. on a
+locked-down corporate network that blocks the local redirect listener), set
+`AUTH_METHOD=device_code` in `.env` to fall back to a device-code flow that
+doesn't require an automatic browser launch.

@@ -22,6 +22,31 @@ _NUMBERED_LABEL_RE = re.compile(
     , re.IGNORECASE,
 )
 
+# PDFs carry no paragraph-style metadata (unlike docx), so headings must be
+# guessed from text shape alone. This corpus's PDF headings (e.g. "Priority
+# Area One — Financial Crime Controls", "Regulatory Commentary") are short,
+# title-cased lines with no trailing sentence punctuation — distinct from
+# wrapped body-paragraph lines, which almost always contain a lowercase
+# non-stopword and/or run past ~80 characters.
+_TITLE_CASE_STOPWORDS = {
+    "of", "the", "and", "for", "to", "in", "at", "a", "an", "on", "with", "this",
+}
+
+
+def _looks_title_case(line: str) -> bool:
+    words = line.split()
+    if not words or len(words) > 10:
+        return False
+    for word in words:
+        core = word.strip("-:,;—")
+        if not core:
+            continue
+        if core.lower() in _TITLE_CASE_STOPWORDS:
+            continue
+        if not core[0].isupper():
+            return False
+    return True
+
 
 def resolve_path(entry: ManifestEntry, corpus_dir: str) -> str | None:
     matches = glob.glob(os.path.join(corpus_dir, entry.filename_glob))
@@ -140,8 +165,14 @@ def _extract_pdf(doc_id: str, path: str) -> ExtractedDocument:
             line = raw_line.strip()
             if not line:
                 continue
-            looks_like_heading = bool(_NUMBERED_LABEL_RE.match(line)) or (
-                len(line) < 80 and line.isupper()
+            looks_like_heading = (
+                bool(_NUMBERED_LABEL_RE.match(line))
+                or (len(line) < 80 and line.isupper())
+                or (
+                    len(line) < 80
+                    and not line.endswith((".", "?", "!", ",", ";", ":"))
+                    and _looks_title_case(line)
+                )
             )
             if looks_like_heading:
                 flush()
