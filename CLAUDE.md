@@ -55,8 +55,16 @@ rationale is in `ARCHITECTURE.md`; judgment calls are in `DECISIONS.md`.
   not) — hence stdlib dataclasses + `unittest` rather than those libraries.
   The real run environment (Windows venv, see `requirements.txt`) should have
   everything needed including `claude-agent-sdk`.
-- Live SDK wiring (`_call_subagent` in `coordinator.py`) has not yet been
-  exercised against a real model — blocked on the Atlas 401 described in
-  `README.md`'s "Known open issue". Treat `coordinator.py` as a carefully
-  designed but unverified skeleton until that's resolved and a real run is
-  tried.
+- Atlas auth is resolved (correct header is `MSF-Subscription-Key`, env var
+  `MSF_SUBSCRIPTION_KEY` — see `README.md`). `_call_subagent` has been
+  verified live, including real tool-based delegation (model calls
+  `read_corpus_document`, gets real extracted text from a real corpus file,
+  answers correctly from it) — see `test_live_minimal.py`. What's still
+  unverified: the full `run_research` pipeline end to end (all 6 stages
+  chained together, including the JSON-contract prompts for
+  triage/retrieval/conflict-detection/synthesis/drafting in
+  `agents/prompts.py`, which have only been designed, not run against a real
+  model yet). Next step when picking this back up: run `run_research` on the
+  Q1 (narrowest) question first, per the brief's own suggested "establish a
+  baseline" approach, and expect to iterate on the prompts based on actual
+  model output shape.
