@@ -162,27 +162,30 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
     # Stage 2: document analysis (PARALLEL — genuinely independent, one doc per call)
     log(f"[3/6] Stage 2 (Document Analysis): analyzing {len(selected_doc_ids)} documents in parallel...")
 
+    semaphore = asyncio.Semaphore(3)  # Limit to 3 concurrent subagents to avoid out-of-memory
+
     async def analyze_one(doc_id: str) -> list[Finding]:
-        doc = extracted[doc_id]
-        response = await _call_subagent(
-            system_prompt=prompts.DOCUMENT_ANALYSIS_SYSTEM_PROMPT,
-            user_message=json.dumps(
-                {
-                    "question": question,
-                    "doc_id": doc_id,
-                    "outline": [o.ref for o in doc.outline],
-                    "full_text": doc.full_text,
-                }
-            ),
-            env=env,
-        )
-        items = _parse_json_response(response)
-        findings = [
-            Finding(topic=i["topic"], claim=i["claim"], citation=Citation(doc_id=doc_id, ref=i["ref"]))
-            for i in items
-        ]
-        log(f"[3/6]   {doc_id}: {len(findings)} findings extracted.")
-        return findings
+        async with semaphore:
+            doc = extracted[doc_id]
+            response = await _call_subagent(
+                system_prompt=prompts.DOCUMENT_ANALYSIS_SYSTEM_PROMPT,
+                user_message=json.dumps(
+                    {
+                        "question": question,
+                        "doc_id": doc_id,
+                        "outline": [o.ref for o in doc.outline],
+                        "full_text": doc.full_text,
+                    }
+                ),
+                env=env,
+            )
+            items = _parse_json_response(response)
+            findings = [
+                Finding(topic=i["topic"], claim=i["claim"], citation=Citation(doc_id=doc_id, ref=i["ref"]))
+                for i in items
+            ]
+            log(f"[3/6]   {doc_id}: {len(findings)} findings extracted.")
+            return findings
 
     analysis_results = await asyncio.gather(*(analyze_one(d) for d in selected_doc_ids))
     all_findings: list[Finding] = [f for sublist in analysis_results for f in sublist]

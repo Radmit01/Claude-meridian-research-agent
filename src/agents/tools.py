@@ -76,6 +76,8 @@ def atlas_env_from_dotenv() -> dict[str, str]:
     bearer token once per process launch — revisit with `apiKeyHelper`
     rotation if a single run risks outliving the token lifetime.
     """
+    import sys
+
     from azure.identity import InteractiveBrowserCredential  # type: ignore
     from dotenv import load_dotenv  # type: ignore
 
@@ -91,7 +93,7 @@ def atlas_env_from_dotenv() -> dict[str, str]:
     credential = InteractiveBrowserCredential(client_id=client_id, tenant_id=tenant_id)
     bearer_token = credential.get_token(token_scope).token
 
-    return {
+    env_dict = {
         "ANTHROPIC_BASE_URL": base_url.rstrip("/"),
         "ANTHROPIC_AUTH_TOKEN": bearer_token,
         "ANTHROPIC_CUSTOM_HEADERS": (
@@ -101,3 +103,11 @@ def atlas_env_from_dotenv() -> dict[str, str]:
         # Deliberately never set ANTHROPIC_API_KEY here: if both are present
         # the CLI prefers ANTHROPIC_API_KEY and silently bypasses the gateway.
     }
+
+    # Pass PYTHONPATH to MCP server subprocess so it can find installed packages like python-docx
+    if hasattr(sys, "prefix"):
+        site_packages = os.path.join(sys.prefix, "Lib", "site-packages")
+        if os.path.exists(site_packages):
+            env_dict["PYTHONPATH"] = site_packages
+
+    return env_dict

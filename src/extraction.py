@@ -81,6 +81,19 @@ def _finalize(doc_id: str, outline: list[OutlineEntry], text_parts: list[str]) -
     full_text = "\n".join(p for p in text_parts if p.strip())
     if not full_text.strip():
         return ExtractedDocument(doc_id=doc_id, status=ReadStatus.EMPTY, outline=[], full_text="")
+    if not outline:
+        # Flat documents with no detected internal headings (e.g. EX-06: a
+        # short press report that's just a headline + prose, no section
+        # structure at all) would otherwise have nothing a citation could
+        # legitimately point at. Fall back to the document's own first line
+        # (its title/headline) as the one citable reference — this matches
+        # what a model naturally does when asked to cite such a document
+        # (cites the headline verbatim), so this closes the gap on the
+        # extraction side rather than requiring every downstream prompt to
+        # special-case "documents with no outline."
+        first_line = next((p.strip() for p in text_parts if p.strip()), "")
+        if first_line:
+            outline = [OutlineEntry(ref=first_line, preview=full_text[:200])]
     return ExtractedDocument(doc_id=doc_id, status=ReadStatus.OK, outline=outline, full_text=full_text)
 
 
