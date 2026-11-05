@@ -43,6 +43,7 @@ class AtlasConfig:
     auth_type: str
     model: str
     auth_method: str
+# changes
 
     @classmethod
     def from_env(cls, env_file: str = ".env") -> "AtlasConfig":
