@@ -34,20 +34,28 @@ Respond with ONLY a JSON object (no prose, no markdown fences):
 """
 
 DOCUMENT_ANALYSIS_SYSTEM_PROMPT = """\
-You are a Document Analysis subagent. You are given ONE document's full
-extracted text (with its outline of section/heading/sheet labels) and the
-research question. Extract every claim material to the question as a
-structured finding. For each finding, cite the exact section/heading/sheet
-label as it appears in the outline — never a filename, never a bare page
-number, never a paraphrase of the heading.
+You are a Document Analysis subagent. You are given a BATCH of one or more
+documents — each with its own full extracted text and its own outline of
+section/heading/sheet labels — plus the research question. For EACH document
+independently, extract every claim material to the question as a structured
+finding. For each finding, cite the exact section/heading/sheet label as it
+appears in THAT document's own outline — never a filename, never a bare page
+number, never a paraphrase of the heading, and never a label from a different
+document in the batch.
 Also flag, as a special finding with topic "COVERAGE_GAP_CANDIDATE", any place
-where the document references content it does not itself reproduce (e.g. "see
+where a document references content it does not itself reproduce (e.g. "see
 confidential annex, not reproduced here") — this is a scoped coverage gap, not
 a parsing failure.
-Respond with ONLY a JSON list (no prose, no markdown fences) of objects:
-{"topic": "...", "claim": "...", "ref": "..."}
-If there is nothing material to this question in this document, respond with
-an empty list: []
+
+Respond with ONLY a JSON object (no prose, no markdown fences) keyed by
+DOC-ID, in exactly this shape:
+{
+  "DOC-ID-1": [{"topic": "...", "claim": "...", "ref": "..."}],
+  "DOC-ID-2": [{"topic": "...", "claim": "...", "ref": "..."}]
+}
+Every DOC-ID given to you in the input MUST appear as a key in your response,
+even with an empty list ([]) if there is nothing material to this question in
+that particular document.
 """
 
 CONFLICT_DETECTION_SYSTEM_PROMPT = """\
@@ -90,6 +98,18 @@ question implies that the evidence could not fully establish, state what
 could not be established, why, the source DOC-ID if applicable, and the
 impact on confidence. Be specific — generic hedging is not acceptable.
 
+After the topical sub-headings, add one final entry in "findings_by_section"
+keyed exactly "Recommended Engagement Focus Areas" containing concrete,
+forward-looking recommendations for where the engagement team should
+concentrate. Each recommendation MUST be a JSON object in the exact same
+{"topic", "claim", "citation"} shape as every other finding below — never a
+plain string. Its "claim" states the recommended focus area and the
+reasoning for it, and its "citation" must point to a specific piece of
+evidence in the findings/gaps already established that justifies it. A
+recommendation with no citation trail back to the corpus is unsupported and
+must not be included — do not pad this section with generic advice that
+isn't traceable to a specific finding or gap above.
+
 Respond with ONLY a JSON object (no prose, no markdown fences) in exactly
 this shape:
 {
@@ -98,6 +118,13 @@ this shape:
       {
         "topic": "short topic tag",
         "claim": "the claim text",
+        "citation": {"doc_id": "DOC-ID", "ref": "exact section/heading/sheet label"}
+      }
+    ],
+    "Recommended Engagement Focus Areas": [
+      {
+        "topic": "short topic tag",
+        "claim": "the recommended focus area and why, grounded in a finding/gap above",
         "citation": {"doc_id": "DOC-ID", "ref": "exact section/heading/sheet label"}
       }
     ]

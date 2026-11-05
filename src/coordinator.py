@@ -1,3 +1,4 @@
+
 """run_research(question) — the single entry point required by the brief.
 
 Orchestration is explicit Python, not an LLM-driven delegation loop: the
@@ -69,6 +70,54 @@ def _parse_json_response(text: str) -> Any:
     return json.loads(stripped)
 
 
+_JSON_RETRY_MAX_ATTEMPTS = 3
+
+
+async def _call_subagent_json(
+    *, system_prompt: str, user_message: str, env: dict[str, str]
+) -> Any:
+    """Common wrapper used by every JSON-contract subagent call (Triage,
+    Retrieval, Document Analysis, Conflict Detection, Synthesis): calls
+    _call_subagent then parses the result as JSON, retrying the WHOLE call
+    (not just the parse) if the model's response is malformed/truncated —
+    distinct from _call_subagent's own retries, which handle subprocess-level
+    crashes rather than bad model output. A regenerated response is often
+    valid even when the first one wasn't, so this directly raises the odds a
+    stage succeeds without changing what a successful response looks like."""
+    last_error: Exception | None = None
+    for attempt in range(1, _JSON_RETRY_MAX_ATTEMPTS + 1):
+        response = await _call_subagent(system_prompt=system_prompt, user_message=user_message, env=env)
+        try:
+            return _parse_json_response(response)
+        except json.JSONDecodeError as exc:
+            last_error = exc
+            if attempt == _JSON_RETRY_MAX_ATTEMPTS:
+                raise
+            print(
+                f"    [retry] malformed JSON from subagent (attempt {attempt}/{_JSON_RETRY_MAX_ATTEMPTS}): "
+                f"{exc}. Regenerating..."
+            )
+    raise last_error  # unreachable
+
+
+# Subprocess spawn + SDK init handshake can be slow under host memory
+# pressure (observed: 60s default load_timeout_ms tripped mid-run on a
+# machine with <500MB free RAM even with concurrency capped at 3). Retried
+# transient inits rather than failing the whole pipeline on one flaky spawn.
+_SUBAGENT_LOAD_TIMEOUT_MS = 180_000
+_SUBAGENT_MAX_ATTEMPTS = 4
+
+# Stage 2 (Document Analysis) batching. Grouping several documents into one
+# subagent call cuts the number of SDK subprocess spawns roughly BATCH_SIZE-fold
+# versus one call per document — the dominant cost/reliability bottleneck on a
+# memory-constrained host is spawning the CLI subprocess, not model latency or
+# per-call token volume. Raise _DOC_ANALYSIS_CONCURRENCY on a host with more
+# free RAM; both are safe to tune without touching the Finding schema or
+# output structure.
+_DOC_ANALYSIS_BATCH_SIZE = 3
+_DOC_ANALYSIS_CONCURRENCY = 2
+
+
 async def _call_subagent(
     *, system_prompt: str, user_message: str, env: dict[str, str], corpus_dir: str | None = None
 ) -> str:
@@ -91,26 +140,52 @@ async def _call_subagent(
         env=env,
         mcp_servers=mcp_servers,
         allowed_tools=allowed_tools,
+        load_timeout_ms=_SUBAGENT_LOAD_TIMEOUT_MS,
     )
 
-    # AssistantMessage.content is a list of content blocks (TextBlock,
-    # ThinkingBlock, ToolUseBlock, ToolResultBlock); only TextBlock carries
-    # the model's text output. There is no flat `.text` on the message
-    # itself — that was an earlier, incorrect assumption that silently
-    # returned "" on every call. See project memory for detail.
-    chunks: list[str] = []
-    async for message in query(prompt=user_message, options=options):
-        if isinstance(message, AssistantMessage):
-            for block in message.content:
-                if isinstance(block, TextBlock):
-                    chunks.append(block.text)
-    return "".join(chunks)
+    for attempt in range(1, _SUBAGENT_MAX_ATTEMPTS + 1):
+        try:
+            # AssistantMessage.content is a list of content blocks (TextBlock,
+            # ThinkingBlock, ToolUseBlock, ToolResultBlock); only TextBlock carries
+            # the model's text output. There is no flat `.text` on the message
+            # itself — that was an earlier, incorrect assumption that silently
+            # returned "" on every call. See project memory for detail.
+            chunks: list[str] = []
+            async for message in query(prompt=user_message, options=options):
+                if isinstance(message, AssistantMessage):
+                    for block in message.content:
+                        if isinstance(block, TextBlock):
+                            chunks.append(block.text)
+            return "".join(chunks)
+        except Exception as exc:
+            if attempt == _SUBAGENT_MAX_ATTEMPTS:
+                raise
+            print(
+                f"    [retry] subagent call failed (attempt {attempt}/{_SUBAGENT_MAX_ATTEMPTS}): "
+                f"{type(exc).__name__}: {exc}. Retrying..."
+            )
+            await asyncio.sleep(15 * attempt)
+    raise AssertionError("unreachable")
+
+
+def _chunk(items: list[str], size: int) -> list[list[str]]:
+    """Common batching helper: splits `items` into fixed-size chunks. Used to
+    group multiple documents into a single subagent call, cutting down the
+    number of SDK subprocess spawns — the real cost/reliability bottleneck on
+    a memory-constrained host, not model latency (see DECISIONS.md)."""
+    return [items[i : i + size] for i in range(0, len(items), size)]
 
 
 async def _stage0_triage(question: str, corpus_dir: str) -> tuple[dict[str, ExtractedDocument], list[dict]]:
-    extracted: dict[str, ExtractedDocument] = {
-        doc_id: extract_document(doc_id, corpus_dir) for doc_id in all_doc_ids()
-    }
+    # extract_document() is pure local file parsing (docx/xlsx/pdf), no
+    # subprocess/network involved, so running all 28 extractions concurrently
+    # via worker threads is a free speed win with zero effect on results —
+    # same deterministic parsing, just not serialized one-by-one.
+    doc_ids = all_doc_ids()
+    extracted_docs = await asyncio.gather(
+        *(asyncio.to_thread(extract_document, doc_id, corpus_dir) for doc_id in doc_ids)
+    )
+    extracted: dict[str, ExtractedDocument] = dict(zip(doc_ids, extracted_docs))
     readable = {k: v for k, v in extracted.items() if v.status == ReadStatus.OK}
     metadata = [
         {
@@ -140,67 +215,79 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
     log("[1/6] Stage 0 (Triage): opening and classifying all 28 corpus documents...")
     extracted, metadata, unreadable = await _stage0_triage(question, corpus_dir)  # type: ignore[misc]
     log(f"[1/6] Triage input ready: {len(metadata)} readable, {len(unreadable)} unreadable/empty. Calling subagent...")
-    triage_response = await _call_subagent(
+    triage_scores = await _call_subagent_json(
         system_prompt=prompts.TRIAGE_SYSTEM_PROMPT,
         user_message=json.dumps({"question": question, "documents": metadata, "unreadable": unreadable}),
         env=env,
     )
-    triage_scores = _parse_json_response(triage_response)
     log(f"[1/6] Triage complete: {len(triage_scores)} documents scored.")
 
     # Stage 1: retrieval (sequential)
     log("[2/6] Stage 1 (Retrieval): selecting which documents to deep-analyze...")
-    retrieval_response = await _call_subagent(
+    retrieval = await _call_subagent_json(
         system_prompt=prompts.RETRIEVAL_SYSTEM_PROMPT,
         user_message=json.dumps({"question": question, "triage": triage_scores, "unreadable": unreadable}),
         env=env,
     )
-    retrieval = _parse_json_response(retrieval_response)
     selected_doc_ids: list[str] = retrieval["selected"]
     log(f"[2/6] Retrieval complete: {len(selected_doc_ids)} documents selected: {selected_doc_ids}")
 
-    # Stage 2: document analysis (PARALLEL — genuinely independent, one doc per call)
-    log(f"[3/6] Stage 2 (Document Analysis): analyzing {len(selected_doc_ids)} documents in parallel...")
+    # Stage 2: document analysis (PARALLEL across batches). Multiple documents
+    # are grouped into a single subagent call (see _chunk / _DOC_ANALYSIS_BATCH_SIZE)
+    # to cut down the number of SDK subprocess spawns — the real cost/reliability
+    # bottleneck on a memory-constrained host — while every finding is still
+    # attributed to its own doc_id exactly as before. This changes nothing
+    # about the Finding schema, citation format, or final pack content; it
+    # only changes how many subagent round-trips it takes to produce them.
+    batches = _chunk(selected_doc_ids, _DOC_ANALYSIS_BATCH_SIZE)
+    log(
+        f"[3/6] Stage 2 (Document Analysis): analyzing {len(selected_doc_ids)} documents "
+        f"in {len(batches)} batch(es) of up to {_DOC_ANALYSIS_BATCH_SIZE}..."
+    )
 
-    semaphore = asyncio.Semaphore(3)  # Limit to 3 concurrent subagents to avoid out-of-memory
+    semaphore = asyncio.Semaphore(_DOC_ANALYSIS_CONCURRENCY)
 
-    async def analyze_one(doc_id: str) -> list[Finding]:
+    async def analyze_batch(doc_ids: list[str]) -> list[Finding]:
         async with semaphore:
-            doc = extracted[doc_id]
-            response = await _call_subagent(
+            documents_payload = [
+                {
+                    "doc_id": doc_id,
+                    "outline": [o.ref for o in extracted[doc_id].outline],
+                    "full_text": extracted[doc_id].full_text,
+                }
+                for doc_id in doc_ids
+            ]
+            by_doc_id = await _call_subagent_json(
                 system_prompt=prompts.DOCUMENT_ANALYSIS_SYSTEM_PROMPT,
-                user_message=json.dumps(
-                    {
-                        "question": question,
-                        "doc_id": doc_id,
-                        "outline": [o.ref for o in doc.outline],
-                        "full_text": doc.full_text,
-                    }
-                ),
+                user_message=json.dumps({"question": question, "documents": documents_payload}),
                 env=env,
             )
-            items = _parse_json_response(response)
-            findings = [
-                Finding(topic=i["topic"], claim=i["claim"], citation=Citation(doc_id=doc_id, ref=i["ref"]))
-                for i in items
-            ]
-            log(f"[3/6]   {doc_id}: {len(findings)} findings extracted.")
-            return findings
+            batch_findings: list[Finding] = []
+            for doc_id in doc_ids:
+                items = by_doc_id.get(doc_id, []) if isinstance(by_doc_id, dict) else []
+                findings: list[Finding] = []
+                for i in items:
+                    if not isinstance(i, dict) or "topic" not in i or "claim" not in i or "ref" not in i:
+                        print(f"    [warn] skipping malformed finding for {doc_id!r}: {i!r}")
+                        continue
+                    findings.append(Finding(topic=i["topic"], claim=i["claim"], citation=Citation(doc_id=doc_id, ref=i["ref"])))
+                log(f"[3/6]   {doc_id}: {len(findings)} findings extracted.")
+                batch_findings.extend(findings)
+            return batch_findings
 
-    analysis_results = await asyncio.gather(*(analyze_one(d) for d in selected_doc_ids))
+    analysis_results = await asyncio.gather(*(analyze_batch(b) for b in batches))
     all_findings: list[Finding] = [f for sublist in analysis_results for f in sublist]
     log(f"[3/6] Document Analysis complete: {len(all_findings)} total findings across {len(selected_doc_ids)} documents.")
 
     # Stage 3: conflict detection (sequential)
     log("[4/6] Stage 3 (Conflict Detection): comparing findings for contradictions...")
-    conflict_response = await _call_subagent(
+    conflict_items = await _call_subagent_json(
         system_prompt=prompts.CONFLICT_DETECTION_SYSTEM_PROMPT,
         user_message=json.dumps(
             {"question": question, "findings": [asdict(f) for f in all_findings]}
         ),
         env=env,
     )
-    conflict_items = _parse_json_response(conflict_response)
     log(f"[4/6] Conflict Detection complete: {len(conflict_items)} conflict(s) found.")
     conflicts = [
         Conflict(
@@ -223,7 +310,7 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
         SourceRecord(doc_id=doc_id, status=doc.status, note=doc.error or "")
         for doc_id, doc in extracted.items()
     ]
-    synthesis_response = await _call_subagent(
+    synthesis = await _call_subagent_json(
         system_prompt=prompts.SYNTHESIS_SYSTEM_PROMPT,
         user_message=json.dumps(
             {
@@ -235,13 +322,15 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
         ),
         env=env,
     )
-    synthesis = _parse_json_response(synthesis_response)
     findings_by_section: dict[str, list[Finding]] = {}
     for heading, items in synthesis["findings_by_section"].items():
-        findings_by_section[heading] = [
-            Finding(topic=i["topic"], claim=i["claim"], citation=Citation(**i["citation"]))
-            for i in items
-        ]
+        parsed_items = []
+        for i in items:
+            if not isinstance(i, dict) or "topic" not in i or "claim" not in i or "citation" not in i:
+                print(f"    [warn] skipping malformed finding under {heading!r}: {i!r}")
+                continue
+            parsed_items.append(Finding(topic=i["topic"], claim=i["claim"], citation=Citation(**i["citation"])))
+        findings_by_section[heading] = parsed_items
     gaps = [
         CoverageGap(
             description=g["description"],
