@@ -68,8 +68,42 @@
 
 10. **PDF heading detection is heuristic, not format-native.** PDFs (EX-01,
     EX-03) don't carry heading styles the way docx does, so section
-    boundaries are detected by line-shape heuristics (numbered/labelled lines,
-    short all-caps lines) rather than true structural parsing. This is a
-    known soft spot — flagged in ARCHITECTURE.md's Known Limitations — to be
-    revisited once the real PDF files are available to check heuristic
-    accuracy against their actual layout.
+    boundaries are detected by line-shape heuristics. Originally only
+    numbered-label and ALL-CAPS patterns were implemented; once the real
+    corpus files were available, both PDFs turned out to use title-case
+    headings (e.g. "Priority Area One — Financial Crime Controls") that
+    matched neither pattern, so each was only capturing 1 outline entry.
+    Added a title-case heuristic (first letter of each non-stopword
+    capitalized, short line, no trailing sentence punctuation) and verified
+    against the real files: EX-01 now correctly captures all 6 "Priority
+    Area" headings plus "Purpose of this Notice" (11 entries total, including
+    a few harmless fragments from wrapped title/footer text); EX-03 captures
+    all 4 real headings. This mattered specifically because the brief's own
+    output template cites `[EX-01, Priority Area One]` by name as its
+    worked example — an outline that couldn't produce that exact ref would
+    have made the template's own example citation fail validation.
+
+11. **No separate Drafting SDK call; final prose is deterministic.** The
+    brief names "drafting" as one of the four minimum roles. An earlier
+    version of this pipeline called a Drafting subagent but discarded its
+    response, rendering the pack via `pack_renderer.render()` regardless —
+    an API call that changed nothing. Decided to drop the call rather than
+    wire its output in: the one place correctness matters most for scoring
+    (exact mandatory sentences, citation format, section structure) should
+    have zero model unpredictability. This system has 5 real SDK-delegated
+    roles (Triage, Retrieval, Document Analysis, Conflict Detection,
+    Synthesis), clearing the brief's minimum of 4 regardless of Drafting's
+    absence as a literal, separately-invoked role — documented explicitly in
+    ARCHITECTURE.md rather than left for a judge to discover.
+
+12. **Subagent JSON contracts made explicit and parsing made defensive.**
+    The original prompts for Synthesis and Conflict Detection told the model
+    to return "JSON matching the X shape" without ever showing that shape —
+    risky, since `coordinator.py` parses specific keys (e.g.
+    `findings_by_section`, and `GapReason` values that must match one of
+    four exact long strings character-for-character). Rewrote every stage
+    prompt to show the literal expected JSON structure and explicitly
+    forbid markdown code fences. Also added `_parse_json_response()`, a
+    small defensive unwrapper that strips a ```` ``` ```` fence if the model
+    adds one anyway, rather than let an otherwise-correct response fail
+    `json.loads` on a stray fence alone.

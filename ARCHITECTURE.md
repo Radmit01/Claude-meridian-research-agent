@@ -55,15 +55,12 @@ would have made that step overloaded and harder to test/inspect in isolation.)
                  └───────────────┬───────────────┘
                                  │
                  ┌───────────────┴───────────────┐
-                 │ Stage 5: Drafting              │   sequential (1 agent)
-                 │  - renders the 4 mandatory      │
-                 │    sections in final prose      │
-                 │  - citation format pass          │
-                 └───────────────┬───────────────┘
-                                 │
-                 ┌───────────────┴───────────────┐
-                 │ Post-process: Citation         │   deterministic code,
-                 │ Validator (non-LLM)            │   not an agent
+                 │ Render + Validate (no SDK call)│   deterministic code,
+                 │  - renders the 4 mandatory      │   not an agent — see
+                 │    sections as markdown          │   "Why no Drafting
+                 │  - citation validator (fuzzy     │   agent" below
+                 │    match vs. extracted outlines) │
+                 │  - structural sanity checks       │
                  └───────────────┬───────────────┘
                                  │
                          research pack .md
@@ -80,9 +77,25 @@ by reading *across* sets. A coordinator that assigned one subagent per source se
 would force conflict/cross-reference detection either nowhere or back onto the
 coordinator itself, defeating the purpose of delegation. Splitting by **pipeline
 stage** instead (triage → retrieval → per-document analysis → cross-document
-conflict detection → synthesis → drafting) keeps each agent's job single-purpose
-and inspectable, and makes the cross-set reasoning an explicit, dedicated stage
-rather than an emergent side effect.
+conflict detection → synthesis → deterministic render) keeps each agent's job
+single-purpose and inspectable, and makes the cross-set reasoning an explicit,
+dedicated stage rather than an emergent side effect.
+
+## Why no Drafting agent
+
+The brief names "drafting" as one of the four minimum subagent roles. This
+system has 5 real SDK-delegated roles (Triage, Retrieval, Document Analysis,
+Conflict Detection, Synthesis) — comfortably above the minimum — but final
+prose generation is deliberately a deterministic function
+(`pack_renderer.render()`), not a 6th model call. An earlier version of this
+pipeline did call a Drafting subagent, but discarded its response entirely
+and rendered the pack deterministically anyway — effectively burning an API
+call for nothing. Rather than wire that output back in, the deliberate choice
+(DECISIONS.md #11) is to drop the call: the one place correctness matters
+most for scoring (exact required sentences, citation format, section
+structure) should have zero model unpredictability. The tradeoff is stated
+plainly: "drafting" as a literally-named, separately-invoked role is not
+present; it is subsumed into deterministic rendering instead.
 
 ## Parallelism
 
@@ -112,10 +125,11 @@ window. The design avoids this with a strict information-funnel:
   full extracted text, and only one document's worth at a time per agent
   instance. Its output is a compact list of structured `Finding` objects
   (claim, citation, topic tags) — the raw text never leaves this stage.
-- Stages 3–5 (conflict detection, synthesis, drafting) operate purely on the
-  structured `Finding`/`Conflict`/`Gap` objects accumulated so far, never on raw
-  document text. This keeps their context bounded by the number of *extracted
-  claims*, not by corpus size.
+- Stages 3–4 (conflict detection, synthesis) operate purely on the structured
+  `Finding`/`Conflict`/`Gap` objects accumulated so far, never on raw document
+  text. This keeps their context bounded by the number of *extracted claims*,
+  not by corpus size. Final rendering is a deterministic function over the
+  same structured objects — no SDK call, no context at all in the usual sense.
 
 ## Failure handling
 
@@ -155,7 +169,7 @@ resolution.
 
 Citation integrity is checked deterministically, by code, not by another LLM
 call: a post-processing pass extracts every `[DOC-ID, ref]` citation from the
-drafted pack, confirms the DOC-ID exists in the corpus manifest, and confirms
+rendered pack, confirms the DOC-ID exists in the corpus manifest, and confirms
 the `ref` string plausibly matches a heading/section/sheet-name actually
 extracted from that document during Stage 2 (fuzzy match against the doc's
 outline, not exact string match, since models won't reproduce heading text

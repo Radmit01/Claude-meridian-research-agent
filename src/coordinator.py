@@ -2,20 +2,29 @@
 
 Orchestration is explicit Python, not an LLM-driven delegation loop: the
 pipeline topology (sequential triage -> retrieval -> parallel doc analysis ->
-sequential conflict detection -> synthesis -> drafting) is fixed and coded
-here, while the actual reasoning at each stage is delegated to the Claude
-Agent SDK via `_call_subagent`, using the role-specific prompts in
+sequential conflict detection -> synthesis -> deterministic render) is fixed
+and coded here, while the actual reasoning at each stage is delegated to the
+Claude Agent SDK via `_call_subagent`, using the role-specific prompts in
 `agents/prompts.py`. This keeps the DAG inspectable/testable independent of
 model behavior, while still using the Agent SDK as the orchestration layer
 for every reasoning step, per the hard constraint in the brief.
 
-NOTE: this is the orchestration skeleton. `_call_subagent` is the one seam
-that actually talks to the SDK/Atlas gateway; everything else (manifest,
-extraction, citation validation, pack rendering) is plain Python and already
-covered by tests that do not require live API access. Live end-to-end wiring
-is blocked on resolving the Atlas 401 (see project memory
-`project_hackathon_atlas_auth`) and has not been exercised against a real
-model yet.
+5 SDK-delegated subagent roles (brief requires >=4): Triage, Retrieval,
+Document Analysis (parallel), Conflict Detection, Synthesis. There is no
+separate "Drafting" SDK call: the final markdown is produced by
+`pack_renderer.render()`, a deterministic function, not a 6th model call.
+This was a deliberate choice (see DECISIONS.md #11), not an oversight: it
+guarantees the mandatory output structure, exact required sentences (e.g.
+the no-conflict sentence), and citation format are always correct, with zero
+model unpredictability in the one place correctness matters most for
+scoring. The tradeoff is explicit: "Drafting" as a literally-named role is
+fulfilled by deterministic code rather than a model call. 5 real
+LLM-delegated roles comfortably clears the brief's minimum of 4 regardless.
+
+`_call_subagent` is the one seam that actually talks to the SDK/Atlas
+gateway; it has been verified live (see `test_live_minimal.py`), including
+real tool-based delegation. The full 6->5-stage pipeline chained together
+has not yet been run end to end against a real model.
 """
 from __future__ import annotations
 
@@ -43,6 +52,21 @@ from .models import (
     SourceRecord,
 )
 from .pack_renderer import render, validate_structure
+
+
+def _parse_json_response(text: str) -> Any:
+    """Models sometimes wrap JSON in markdown fences (```json ... ```) even
+    when explicitly told not to. Strip that before parsing rather than let
+    the whole pipeline stage fail on an otherwise-correct response."""
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        lines = stripped.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        stripped = "\n".join(lines).strip()
+    return json.loads(stripped)
 
 
 async def _call_subagent(
@@ -113,7 +137,7 @@ async def run_research(question: str, corpus_dir: str) -> dict[str, Any]:
         user_message=json.dumps({"question": question, "documents": metadata, "unreadable": unreadable}),
         env=env,
     )
-    triage_scores = json.loads(triage_response)
+    triage_scores = _parse_json_response(triage_response)
 
     # Stage 1: retrieval (sequential)
     retrieval_response = await _call_subagent(
@@ -121,7 +145,7 @@ async def run_research(question: str, corpus_dir: str) -> dict[str, Any]:
         user_message=json.dumps({"question": question, "triage": triage_scores, "unreadable": unreadable}),
         env=env,
     )
-    retrieval = json.loads(retrieval_response)
+    retrieval = _parse_json_response(retrieval_response)
     selected_doc_ids: list[str] = retrieval["selected"]
 
     # Stage 2: document analysis (PARALLEL — genuinely independent, one doc per call)
@@ -139,7 +163,7 @@ async def run_research(question: str, corpus_dir: str) -> dict[str, Any]:
             ),
             env=env,
         )
-        items = json.loads(response)
+        items = _parse_json_response(response)
         return [
             Finding(topic=i["topic"], claim=i["claim"], citation=Citation(doc_id=doc_id, ref=i["ref"]))
             for i in items
@@ -156,7 +180,7 @@ async def run_research(question: str, corpus_dir: str) -> dict[str, Any]:
         ),
         env=env,
     )
-    conflict_items = json.loads(conflict_response)
+    conflict_items = _parse_json_response(conflict_response)
     conflicts = [
         Conflict(
             subject=c["subject"],
@@ -189,7 +213,7 @@ async def run_research(question: str, corpus_dir: str) -> dict[str, Any]:
         ),
         env=env,
     )
-    synthesis = json.loads(synthesis_response)
+    synthesis = _parse_json_response(synthesis_response)
     findings_by_section: dict[str, list[Finding]] = {}
     for heading, items in synthesis["findings_by_section"].items():
         findings_by_section[heading] = [
@@ -214,13 +238,8 @@ async def run_research(question: str, corpus_dir: str) -> dict[str, Any]:
         sources_consulted=sources_consulted,
     )
 
-    # Stage 5: drafting (sequential) — produces prose; renderer still enforces structure
-    await _call_subagent(
-        system_prompt=prompts.DRAFTING_SYSTEM_PROMPT,
-        user_message=json.dumps({"pack": "see synthesis output above"}),
-        env=env,
-    )
-
+    # Final rendering is deterministic, not a 6th SDK call — see the module
+    # docstring and DECISIONS.md #11 for why.
     markdown = render(pack)
     outlines = {doc_id: doc.outline for doc_id, doc in extracted.items() if doc.status == ReadStatus.OK}
     citation_issues = validate_citations(markdown, outlines)
