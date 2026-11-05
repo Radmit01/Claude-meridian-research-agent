@@ -127,19 +127,29 @@ async def _stage0_triage(question: str, corpus_dir: str) -> tuple[dict[str, Extr
     return extracted, metadata, unreadable  # type: ignore[return-value]
 
 
-async def run_research(question: str, corpus_dir: str) -> dict[str, Any]:
+async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> dict[str, Any]:
+    def log(msg: str) -> None:
+        if verbose:
+            print(msg)
+
+    log("[0/6] Building Atlas env (Entra login may open a browser now)...")
     env = atlas_env_from_dotenv()
+    log("[0/6] Env ready.")
 
     # Stage 0: triage (sequential, metadata-only, single pass)
+    log("[1/6] Stage 0 (Triage): opening and classifying all 28 corpus documents...")
     extracted, metadata, unreadable = await _stage0_triage(question, corpus_dir)  # type: ignore[misc]
+    log(f"[1/6] Triage input ready: {len(metadata)} readable, {len(unreadable)} unreadable/empty. Calling subagent...")
     triage_response = await _call_subagent(
         system_prompt=prompts.TRIAGE_SYSTEM_PROMPT,
         user_message=json.dumps({"question": question, "documents": metadata, "unreadable": unreadable}),
         env=env,
     )
     triage_scores = _parse_json_response(triage_response)
+    log(f"[1/6] Triage complete: {len(triage_scores)} documents scored.")
 
     # Stage 1: retrieval (sequential)
+    log("[2/6] Stage 1 (Retrieval): selecting which documents to deep-analyze...")
     retrieval_response = await _call_subagent(
         system_prompt=prompts.RETRIEVAL_SYSTEM_PROMPT,
         user_message=json.dumps({"question": question, "triage": triage_scores, "unreadable": unreadable}),
@@ -147,8 +157,11 @@ async def run_research(question: str, corpus_dir: str) -> dict[str, Any]:
     )
     retrieval = _parse_json_response(retrieval_response)
     selected_doc_ids: list[str] = retrieval["selected"]
+    log(f"[2/6] Retrieval complete: {len(selected_doc_ids)} documents selected: {selected_doc_ids}")
 
     # Stage 2: document analysis (PARALLEL — genuinely independent, one doc per call)
+    log(f"[3/6] Stage 2 (Document Analysis): analyzing {len(selected_doc_ids)} documents in parallel...")
+
     async def analyze_one(doc_id: str) -> list[Finding]:
         doc = extracted[doc_id]
         response = await _call_subagent(
@@ -164,15 +177,19 @@ async def run_research(question: str, corpus_dir: str) -> dict[str, Any]:
             env=env,
         )
         items = _parse_json_response(response)
-        return [
+        findings = [
             Finding(topic=i["topic"], claim=i["claim"], citation=Citation(doc_id=doc_id, ref=i["ref"]))
             for i in items
         ]
+        log(f"[3/6]   {doc_id}: {len(findings)} findings extracted.")
+        return findings
 
     analysis_results = await asyncio.gather(*(analyze_one(d) for d in selected_doc_ids))
     all_findings: list[Finding] = [f for sublist in analysis_results for f in sublist]
+    log(f"[3/6] Document Analysis complete: {len(all_findings)} total findings across {len(selected_doc_ids)} documents.")
 
     # Stage 3: conflict detection (sequential)
+    log("[4/6] Stage 3 (Conflict Detection): comparing findings for contradictions...")
     conflict_response = await _call_subagent(
         system_prompt=prompts.CONFLICT_DETECTION_SYSTEM_PROMPT,
         user_message=json.dumps(
@@ -181,6 +198,7 @@ async def run_research(question: str, corpus_dir: str) -> dict[str, Any]:
         env=env,
     )
     conflict_items = _parse_json_response(conflict_response)
+    log(f"[4/6] Conflict Detection complete: {len(conflict_items)} conflict(s) found.")
     conflicts = [
         Conflict(
             subject=c["subject"],
@@ -197,6 +215,7 @@ async def run_research(question: str, corpus_dir: str) -> dict[str, Any]:
     ]
 
     # Stage 4: synthesis (sequential)
+    log("[5/6] Stage 4 (Synthesis): organizing findings and deriving coverage gaps...")
     sources_consulted = [
         SourceRecord(doc_id=doc_id, status=doc.status, note=doc.error or "")
         for doc_id, doc in extracted.items()
@@ -230,6 +249,11 @@ async def run_research(question: str, corpus_dir: str) -> dict[str, Any]:
         for g in synthesis["gaps"]
     ]
 
+    log(
+        f"[5/6] Synthesis complete: {len(findings_by_section)} section(s), "
+        f"{len(gaps)} coverage gap(s) derived."
+    )
+
     pack = ResearchPack(
         question=question,
         findings_by_section=findings_by_section,
@@ -240,10 +264,15 @@ async def run_research(question: str, corpus_dir: str) -> dict[str, Any]:
 
     # Final rendering is deterministic, not a 6th SDK call — see the module
     # docstring and DECISIONS.md #11 for why.
+    log("[6/6] Rendering final pack and running citation/structure validation...")
     markdown = render(pack)
     outlines = {doc_id: doc.outline for doc_id, doc in extracted.items() if doc.status == ReadStatus.OK}
     citation_issues = validate_citations(markdown, outlines)
     structure_issues = validate_structure(pack)
+    log(
+        f"[6/6] Done. {len(citation_issues)} citation issue(s), "
+        f"{len(structure_issues)} structure issue(s) flagged."
+    )
 
     return {
         "markdown": markdown,
