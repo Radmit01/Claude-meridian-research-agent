@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 from dataclasses import asdict
 from typing import Any
 
@@ -114,8 +115,8 @@ _SUBAGENT_MAX_ATTEMPTS = 4
 # per-call token volume. Raise _DOC_ANALYSIS_CONCURRENCY on a host with more
 # free RAM; both are safe to tune without touching the Finding schema or
 # output structure.
-_DOC_ANALYSIS_BATCH_SIZE = 3
-_DOC_ANALYSIS_CONCURRENCY = 2
+_DOC_ANALYSIS_BATCH_SIZE = 5
+_DOC_ANALYSIS_CONCURRENCY = 3
 
 
 async def _call_subagent(
@@ -176,6 +177,19 @@ def _chunk(items: list[str], size: int) -> list[list[str]]:
     return [items[i : i + size] for i in range(0, len(items), size)]
 
 
+def _parse_finding_items(items: list, label: str) -> list[Finding]:
+    """Common parser for a list of {"topic", "claim", "citation": {...}}
+    dicts — shared by Synthesis's per-section findings and the Recommendations
+    list, which use the identical shape."""
+    parsed: list[Finding] = []
+    for i in items:
+        if not isinstance(i, dict) or "topic" not in i or "claim" not in i or "citation" not in i:
+            print(f"    [warn] skipping malformed finding under {label!r}: {i!r}")
+            continue
+        parsed.append(Finding(topic=i["topic"], claim=i["claim"], citation=Citation(**i["citation"])))
+    return parsed
+
+
 async def _stage0_triage(question: str, corpus_dir: str) -> tuple[dict[str, ExtractedDocument], list[dict]]:
     # extract_document() is pure local file parsing (docx/xlsx/pdf), no
     # subprocess/network involved, so running all 28 extractions concurrently
@@ -212,6 +226,7 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
     log("[0/6] Env ready.")
 
     # Stage 0: triage (sequential, metadata-only, single pass)
+    _t0 = time.monotonic()
     log("[1/6] Stage 0 (Triage): opening and classifying all 28 corpus documents...")
     extracted, metadata, unreadable = await _stage0_triage(question, corpus_dir)  # type: ignore[misc]
     log(f"[1/6] Triage input ready: {len(metadata)} readable, {len(unreadable)} unreadable/empty. Calling subagent...")
@@ -220,9 +235,10 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
         user_message=json.dumps({"question": question, "documents": metadata, "unreadable": unreadable}),
         env=env,
     )
-    log(f"[1/6] Triage complete: {len(triage_scores)} documents scored.")
+    log(f"[1/6] Triage complete: {len(triage_scores)} documents scored. ({time.monotonic() - _t0:.1f}s)")
 
     # Stage 1: retrieval (sequential)
+    _t1 = time.monotonic()
     log("[2/6] Stage 1 (Retrieval): selecting which documents to deep-analyze...")
     retrieval = await _call_subagent_json(
         system_prompt=prompts.RETRIEVAL_SYSTEM_PROMPT,
@@ -230,7 +246,7 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
         env=env,
     )
     selected_doc_ids: list[str] = retrieval["selected"]
-    log(f"[2/6] Retrieval complete: {len(selected_doc_ids)} documents selected: {selected_doc_ids}")
+    log(f"[2/6] Retrieval complete: {len(selected_doc_ids)} documents selected: {selected_doc_ids} ({time.monotonic() - _t1:.1f}s)")
 
     # Stage 2: document analysis (PARALLEL across batches). Multiple documents
     # are grouped into a single subagent call (see _chunk / _DOC_ANALYSIS_BATCH_SIZE)
@@ -239,6 +255,7 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
     # attributed to its own doc_id exactly as before. This changes nothing
     # about the Finding schema, citation format, or final pack content; it
     # only changes how many subagent round-trips it takes to produce them.
+    _t2 = time.monotonic()
     batches = _chunk(selected_doc_ids, _DOC_ANALYSIS_BATCH_SIZE)
     log(
         f"[3/6] Stage 2 (Document Analysis): analyzing {len(selected_doc_ids)} documents "
@@ -277,9 +294,13 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
 
     analysis_results = await asyncio.gather(*(analyze_batch(b) for b in batches))
     all_findings: list[Finding] = [f for sublist in analysis_results for f in sublist]
-    log(f"[3/6] Document Analysis complete: {len(all_findings)} total findings across {len(selected_doc_ids)} documents.")
+    log(
+        f"[3/6] Document Analysis complete: {len(all_findings)} total findings across "
+        f"{len(selected_doc_ids)} documents. ({time.monotonic() - _t2:.1f}s)"
+    )
 
     # Stage 3: conflict detection (sequential)
+    _t3 = time.monotonic()
     log("[4/6] Stage 3 (Conflict Detection): comparing findings for contradictions...")
     conflict_items = await _call_subagent_json(
         system_prompt=prompts.CONFLICT_DETECTION_SYSTEM_PROMPT,
@@ -288,7 +309,7 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
         ),
         env=env,
     )
-    log(f"[4/6] Conflict Detection complete: {len(conflict_items)} conflict(s) found.")
+    log(f"[4/6] Conflict Detection complete: {len(conflict_items)} conflict(s) found. ({time.monotonic() - _t3:.1f}s)")
     conflicts = [
         Conflict(
             subject=c["subject"],
@@ -304,33 +325,40 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
         for c in conflict_items
     ]
 
-    # Stage 4: synthesis (sequential)
-    log("[5/6] Stage 4 (Synthesis): organizing findings and deriving coverage gaps...")
+    # Stage 4: synthesis + recommendations (PARALLEL). Both calls consume the
+    # same raw findings/conflicts/sources_consulted — Synthesis organizes them
+    # into topical sections and derives coverage gaps, while Recommendations
+    # independently derives the grounded "Recommended Engagement Focus Areas"
+    # list. These were one combined call; splitting them cuts this stage's
+    # wall-clock roughly in half (it had become the single largest stage once
+    # recommendations were added), with no change to the final pack content —
+    # same sections, same gaps, same recommendation schema, just produced via
+    # two parallel round-trips instead of one sequential one.
+    _t4 = time.monotonic()
+    log("[5/6] Stage 4 (Synthesis): organizing findings, deriving gaps and recommendations...")
     sources_consulted = [
         SourceRecord(doc_id=doc_id, status=doc.status, note=doc.error or "")
         for doc_id, doc in extracted.items()
     ]
-    synthesis = await _call_subagent_json(
-        system_prompt=prompts.SYNTHESIS_SYSTEM_PROMPT,
-        user_message=json.dumps(
-            {
-                "question": question,
-                "findings": [asdict(f) for f in all_findings],
-                "conflicts": [asdict(c) for c in conflicts],
-                "sources_consulted": [asdict(s) for s in sources_consulted],
-            }
-        ),
-        env=env,
+    shared_payload = json.dumps(
+        {
+            "question": question,
+            "findings": [asdict(f) for f in all_findings],
+            "conflicts": [asdict(c) for c in conflicts],
+            "sources_consulted": [asdict(s) for s in sources_consulted],
+        }
     )
-    findings_by_section: dict[str, list[Finding]] = {}
-    for heading, items in synthesis["findings_by_section"].items():
-        parsed_items = []
-        for i in items:
-            if not isinstance(i, dict) or "topic" not in i or "claim" not in i or "citation" not in i:
-                print(f"    [warn] skipping malformed finding under {heading!r}: {i!r}")
-                continue
-            parsed_items.append(Finding(topic=i["topic"], claim=i["claim"], citation=Citation(**i["citation"])))
-        findings_by_section[heading] = parsed_items
+    synthesis, recommendations = await asyncio.gather(
+        _call_subagent_json(system_prompt=prompts.SYNTHESIS_SYSTEM_PROMPT, user_message=shared_payload, env=env),
+        _call_subagent_json(system_prompt=prompts.RECOMMENDATIONS_SYSTEM_PROMPT, user_message=shared_payload, env=env),
+    )
+    findings_by_section: dict[str, list[Finding]] = {
+        heading: _parse_finding_items(items, heading)
+        for heading, items in synthesis["findings_by_section"].items()
+    }
+    findings_by_section["Recommended Engagement Focus Areas"] = _parse_finding_items(
+        recommendations.get("recommendations", []), "Recommended Engagement Focus Areas"
+    )
     gaps = [
         CoverageGap(
             description=g["description"],
@@ -342,8 +370,9 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
     ]
 
     log(
-        f"[5/6] Synthesis complete: {len(findings_by_section)} section(s), "
-        f"{len(gaps)} coverage gap(s) derived."
+        f"[5/6] Synthesis complete: {len(findings_by_section)} section(s), {len(gaps)} coverage gap(s), "
+        f"{len(findings_by_section['Recommended Engagement Focus Areas'])} recommendation(s) derived. "
+        f"({time.monotonic() - _t4:.1f}s)"
     )
 
     pack = ResearchPack(
