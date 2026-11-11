@@ -134,10 +134,21 @@ independently elsewhere.
 
 Each recommendation's "claim" states the recommended focus area and the
 reasoning for it, and its "citation" must point to a specific piece of
-evidence in the findings/conflicts given to you that justifies it. A
-recommendation with no citation trail back to the corpus is unsupported and
-must not be included — do not pad this list with generic advice that isn't
-traceable to a specific finding.
+real evidence in the findings/conflicts given to you — the doc_id and ref
+MUST be copied from an actual finding's or conflict's own citation, never
+invented. A recommendation with no citation trail back to the corpus is
+unsupported and must not be included — do not pad this list with generic
+advice that isn't traceable to a specific finding.
+
+Some documents in the corpus failed to process or yielded no extractable
+content (you will not see any findings for them, since none could be
+extracted). If you want to recommend following up on such a document, you
+have no real finding to cite — do NOT invent a citation or reference the
+document's processing status as if it were a section/heading ref (e.g.
+never write something like "status: processed — no extractable content" as
+a ref). Simply omit that recommendation; gaps like this are already captured
+separately in Synthesis's Coverage Gaps output, so this subagent does not
+need to re-raise them.
 
 Respond with ONLY a JSON object (no prose, no markdown fences) in exactly
 this shape:
