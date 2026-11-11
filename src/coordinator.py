@@ -2,30 +2,38 @@
 """run_research(question) — the single entry point required by the brief.
 
 Orchestration is explicit Python, not an LLM-driven delegation loop: the
-pipeline topology (sequential triage -> retrieval -> parallel doc analysis ->
-sequential conflict detection -> synthesis -> deterministic render) is fixed
-and coded here, while the actual reasoning at each stage is delegated to the
-Claude Agent SDK via `_call_subagent`, using the role-specific prompts in
-`agents/prompts.py`. This keeps the DAG inspectable/testable independent of
-model behavior, while still using the Agent SDK as the orchestration layer
-for every reasoning step, per the hard constraint in the brief.
+pipeline topology (triage -> retrieval -> parallel document analysis ->
+conflict detection -> parallel synthesis+recommendations -> drafting ->
+deterministic render) is fixed and coded here, while the actual reasoning at
+each stage is delegated to the Claude Agent SDK via `_call_subagent`, using
+the role-specific prompts in `agents/prompts.py`. This keeps the DAG
+inspectable/testable independent of model behavior, while still using the
+Agent SDK as the orchestration layer for every reasoning step, per the hard
+constraint in the brief.
 
-5 SDK-delegated subagent roles (brief requires >=4): Triage, Retrieval,
-Document Analysis (parallel), Conflict Detection, Synthesis. There is no
-separate "Drafting" SDK call: the final markdown is produced by
-`pack_renderer.render()`, a deterministic function, not a 6th model call.
-This was a deliberate choice (see DECISIONS.md #11), not an oversight: it
-guarantees the mandatory output structure, exact required sentences (e.g.
-the no-conflict sentence), and citation format are always correct, with zero
-model unpredictability in the one place correctness matters most for
-scoring. The tradeoff is explicit: "Drafting" as a literally-named role is
-fulfilled by deterministic code rather than a model call. 5 real
-LLM-delegated roles comfortably clears the brief's minimum of 4 regardless.
+7 SDK-delegated subagent roles. The brief names four specific minimum roles
+by name — Search, Document Analysis, Synthesis, Drafting — and permits
+additional roles for meaningful decomposition. This pipeline covers all four
+named roles plus three more: Triage + Retrieval together implement Search
+(split because Triage must cheaply classify all 28 documents before
+Retrieval selects a subset to deep-analyze — see DECISIONS.md #4), Document
+Analysis (batched, parallel — DECISIONS.md #13), Conflict Detection (an
+added role — DECISIONS.md #3), Synthesis + Recommendations (split from one
+combined call for parallelism — DECISIONS.md #13), and Drafting.
+
+Drafting is deliberately scoped narrowly: it only ever sees and returns
+{id, topic, claim} tuples for each finding — never citations — so the model
+has no way to invent, corrupt, or reformat a citation. The deterministic
+renderer (`pack_renderer.render()`) still enforces the mandatory 4-section
+structure, exact required sentences, and citation format on top of whatever
+Drafting produces, regardless of its output. See DECISIONS.md #11 for why
+this scope was chosen (an earlier prototype called a Drafting subagent and
+discarded its output entirely; this version actually uses it, with its
+blast radius limited to prose only).
 
 `_call_subagent` is the one seam that actually talks to the SDK/Atlas
 gateway; it has been verified live (see `test_live_minimal.py`), including
-real tool-based delegation. The full 6->5-stage pipeline chained together
-has not yet been run end to end against a real model.
+real tool-based delegation.
 """
 from __future__ import annotations
 
@@ -118,6 +126,14 @@ _SUBAGENT_MAX_ATTEMPTS = 4
 _DOC_ANALYSIS_BATCH_SIZE = 5
 _DOC_ANALYSIS_CONCURRENCY = 3
 
+# Stage 5 (Drafting) batching, same rationale as Stage 2: one call per
+# finding would multiply subprocess spawns; one call for ALL findings risks
+# a single oversized response (same truncation failure mode Synthesis hit
+# before it was split — see DECISIONS.md #13). A fixed batch size keeps each
+# call's output bounded regardless of how many findings a given question
+# produces.
+_DRAFTING_BATCH_SIZE = 25
+
 
 async def _call_subagent(
     *, system_prompt: str, user_message: str, env: dict[str, str], corpus_dir: str | None = None
@@ -169,12 +185,57 @@ async def _call_subagent(
     raise AssertionError("unreachable")
 
 
-def _chunk(items: list[str], size: int) -> list[list[str]]:
+def _chunk(items: list[Any], size: int) -> list[list[Any]]:
     """Common batching helper: splits `items` into fixed-size chunks. Used to
-    group multiple documents into a single subagent call, cutting down the
-    number of SDK subprocess spawns — the real cost/reliability bottleneck on
-    a memory-constrained host, not model latency (see DECISIONS.md)."""
+    group multiple documents (Stage 2) or findings (Stage 5 Drafting) into a
+    single subagent call, cutting down the number of SDK subprocess spawns —
+    the real cost/reliability bottleneck on a memory-constrained host, not
+    model latency (see DECISIONS.md)."""
     return [items[i : i + size] for i in range(0, len(items), size)]
+
+
+def _flatten_findings_for_drafting(
+    findings_by_section: dict[str, list[Finding]]
+) -> tuple[list[dict], list[tuple[str, int]]]:
+    """Builds the id-ordered payload sent to Drafting (topic+claim only — no
+    citations, so the model has no way to touch them) and a parallel index
+    mapping id -> (section heading, position in that section's list), used to
+    stitch the drafted text back into the original structure afterward."""
+    payload: list[dict] = []
+    index: list[tuple[str, int]] = []
+    i = 0
+    for heading, items in findings_by_section.items():
+        for pos, finding in enumerate(items):
+            payload.append({"id": i, "topic": finding.topic, "claim": finding.claim})
+            index.append((heading, pos))
+            i += 1
+    return payload, index
+
+
+def _apply_drafted_claims(
+    findings_by_section: dict[str, list[Finding]],
+    index: list[tuple[str, int]],
+    drafted_claims: dict[int, str],
+) -> dict[str, list[Finding]]:
+    """Pure, deterministic stitching of Drafting's polished claim text back
+    into the original Finding objects. Citations and topics are never sent to
+    or returned by the model and always come from the original finding — so
+    a Drafting glitch (a missing id, a malformed item, a dropped batch) can
+    at worst leave a claim's original wording in place; it can never corrupt
+    a citation, drop a finding, duplicate one, or break the mandatory
+    structure the renderer and citation validator enforce downstream."""
+    result: dict[str, list[Finding]] = {heading: list(items) for heading, items in findings_by_section.items()}
+    missing = 0
+    for fid, (heading, pos) in enumerate(index):
+        original = result[heading][pos]
+        new_claim = drafted_claims.get(fid)
+        if new_claim is None:
+            missing += 1
+            continue
+        result[heading][pos] = Finding(topic=original.topic, claim=new_claim, citation=original.citation)
+    if missing:
+        print(f"    [warn] Drafting did not return {missing}/{len(index)} finding(s); kept original claim text for those.")
+    return result
 
 
 def _parse_finding_items(items: list, label: str) -> list[Finding]:
@@ -221,32 +282,32 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
         if verbose:
             print(msg)
 
-    log("[0/6] Building Atlas env (Entra login may open a browser now)...")
+    log("[0/7] Building Atlas env (Entra login may open a browser now)...")
     env = atlas_env_from_dotenv()
-    log("[0/6] Env ready.")
+    log("[0/7] Env ready.")
 
     # Stage 0: triage (sequential, metadata-only, single pass)
     _t0 = time.monotonic()
-    log("[1/6] Stage 0 (Triage): opening and classifying all 28 corpus documents...")
+    log("[1/7] Stage 0 (Triage): opening and classifying all 28 corpus documents...")
     extracted, metadata, unreadable = await _stage0_triage(question, corpus_dir)  # type: ignore[misc]
-    log(f"[1/6] Triage input ready: {len(metadata)} readable, {len(unreadable)} unreadable/empty. Calling subagent...")
+    log(f"[1/7] Triage input ready: {len(metadata)} readable, {len(unreadable)} unreadable/empty. Calling subagent...")
     triage_scores = await _call_subagent_json(
         system_prompt=prompts.TRIAGE_SYSTEM_PROMPT,
         user_message=json.dumps({"question": question, "documents": metadata, "unreadable": unreadable}),
         env=env,
     )
-    log(f"[1/6] Triage complete: {len(triage_scores)} documents scored. ({time.monotonic() - _t0:.1f}s)")
+    log(f"[1/7] Triage complete: {len(triage_scores)} documents scored. ({time.monotonic() - _t0:.1f}s)")
 
     # Stage 1: retrieval (sequential)
     _t1 = time.monotonic()
-    log("[2/6] Stage 1 (Retrieval): selecting which documents to deep-analyze...")
+    log("[2/7] Stage 1 (Retrieval): selecting which documents to deep-analyze...")
     retrieval = await _call_subagent_json(
         system_prompt=prompts.RETRIEVAL_SYSTEM_PROMPT,
         user_message=json.dumps({"question": question, "triage": triage_scores, "unreadable": unreadable}),
         env=env,
     )
     selected_doc_ids: list[str] = retrieval["selected"]
-    log(f"[2/6] Retrieval complete: {len(selected_doc_ids)} documents selected: {selected_doc_ids} ({time.monotonic() - _t1:.1f}s)")
+    log(f"[2/7] Retrieval complete: {len(selected_doc_ids)} documents selected: {selected_doc_ids} ({time.monotonic() - _t1:.1f}s)")
 
     # Stage 2: document analysis (PARALLEL across batches). Multiple documents
     # are grouped into a single subagent call (see _chunk / _DOC_ANALYSIS_BATCH_SIZE)
@@ -258,7 +319,7 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
     _t2 = time.monotonic()
     batches = _chunk(selected_doc_ids, _DOC_ANALYSIS_BATCH_SIZE)
     log(
-        f"[3/6] Stage 2 (Document Analysis): analyzing {len(selected_doc_ids)} documents "
+        f"[3/7] Stage 2 (Document Analysis): analyzing {len(selected_doc_ids)} documents "
         f"in {len(batches)} batch(es) of up to {_DOC_ANALYSIS_BATCH_SIZE}..."
     )
 
@@ -288,20 +349,20 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
                         print(f"    [warn] skipping malformed finding for {doc_id!r}: {i!r}")
                         continue
                     findings.append(Finding(topic=i["topic"], claim=i["claim"], citation=Citation(doc_id=doc_id, ref=i["ref"])))
-                log(f"[3/6]   {doc_id}: {len(findings)} findings extracted.")
+                log(f"[3/7]   {doc_id}: {len(findings)} findings extracted.")
                 batch_findings.extend(findings)
             return batch_findings
 
     analysis_results = await asyncio.gather(*(analyze_batch(b) for b in batches))
     all_findings: list[Finding] = [f for sublist in analysis_results for f in sublist]
     log(
-        f"[3/6] Document Analysis complete: {len(all_findings)} total findings across "
+        f"[3/7] Document Analysis complete: {len(all_findings)} total findings across "
         f"{len(selected_doc_ids)} documents. ({time.monotonic() - _t2:.1f}s)"
     )
 
     # Stage 3: conflict detection (sequential)
     _t3 = time.monotonic()
-    log("[4/6] Stage 3 (Conflict Detection): comparing findings for contradictions...")
+    log("[4/7] Stage 3 (Conflict Detection): comparing findings for contradictions...")
     conflict_items = await _call_subagent_json(
         system_prompt=prompts.CONFLICT_DETECTION_SYSTEM_PROMPT,
         user_message=json.dumps(
@@ -309,7 +370,7 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
         ),
         env=env,
     )
-    log(f"[4/6] Conflict Detection complete: {len(conflict_items)} conflict(s) found. ({time.monotonic() - _t3:.1f}s)")
+    log(f"[4/7] Conflict Detection complete: {len(conflict_items)} conflict(s) found. ({time.monotonic() - _t3:.1f}s)")
     conflicts = [
         Conflict(
             subject=c["subject"],
@@ -335,7 +396,7 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
     # same sections, same gaps, same recommendation schema, just produced via
     # two parallel round-trips instead of one sequential one.
     _t4 = time.monotonic()
-    log("[5/6] Stage 4 (Synthesis): organizing findings, deriving gaps and recommendations...")
+    log("[5/7] Stage 4 (Synthesis): organizing findings, deriving gaps and recommendations...")
     sources_consulted = [
         SourceRecord(doc_id=doc_id, status=doc.status, note=doc.error or "")
         for doc_id, doc in extracted.items()
@@ -370,9 +431,57 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
     ]
 
     log(
-        f"[5/6] Synthesis complete: {len(findings_by_section)} section(s), {len(gaps)} coverage gap(s), "
+        f"[5/7] Synthesis complete: {len(findings_by_section)} section(s), {len(gaps)} coverage gap(s), "
         f"{len(findings_by_section['Recommended Engagement Focus Areas'])} recommendation(s) derived. "
         f"({time.monotonic() - _t4:.1f}s)"
+    )
+
+    # Stage 5: drafting (PARALLEL across batches, same pattern as Stage 2).
+    # Rewrites each finding's claim into polished client-facing prose.
+    # Citations and topics are never sent to or returned by this subagent —
+    # only {id, topic, claim} round-trips — so a Drafting glitch (a dropped
+    # batch, a malformed item, a missing id) can at worst leave a claim's
+    # original wording in place; it can never corrupt a citation, drop a
+    # finding, or break the mandatory structure the renderer and citation
+    # validator enforce afterward. See DECISIONS.md #11 for why this scope
+    # was chosen and why Drafting is a real, used subagent call here.
+    _t5 = time.monotonic()
+    drafting_payload, drafting_index = _flatten_findings_for_drafting(findings_by_section)
+    drafting_batches = _chunk(drafting_payload, _DRAFTING_BATCH_SIZE)
+    log(
+        f"[6/7] Stage 5 (Drafting): polishing {len(drafting_payload)} finding(s) "
+        f"in {len(drafting_batches)} batch(es) of up to {_DRAFTING_BATCH_SIZE}..."
+    )
+    drafting_semaphore = asyncio.Semaphore(_DOC_ANALYSIS_CONCURRENCY)
+
+    async def draft_batch(batch: list[dict]) -> dict[int, str]:
+        async with drafting_semaphore:
+            response = await _call_subagent_json(
+                system_prompt=prompts.DRAFTING_SYSTEM_PROMPT,
+                user_message=json.dumps({"question": question, "findings": batch}),
+                env=env,
+            )
+            items = response.get("drafted", []) if isinstance(response, dict) else []
+            batch_result: dict[int, str] = {}
+            for item in items:
+                if not isinstance(item, dict) or "id" not in item or "claim" not in item:
+                    continue
+                try:
+                    fid = int(item["id"])
+                except (TypeError, ValueError):
+                    continue
+                if isinstance(item["claim"], str) and item["claim"].strip():
+                    batch_result[fid] = item["claim"]
+            return batch_result
+
+    drafted_batch_maps = await asyncio.gather(*(draft_batch(b) for b in drafting_batches))
+    drafted_claims: dict[int, str] = {}
+    for m in drafted_batch_maps:
+        drafted_claims.update(m)
+    findings_by_section = _apply_drafted_claims(findings_by_section, drafting_index, drafted_claims)
+    log(
+        f"[6/7] Drafting complete: {len(drafted_claims)}/{len(drafting_payload)} finding(s) redrafted. "
+        f"({time.monotonic() - _t5:.1f}s)"
     )
 
     pack = ResearchPack(
@@ -383,15 +492,16 @@ async def run_research(question: str, corpus_dir: str, verbose: bool = True) -> 
         sources_consulted=sources_consulted,
     )
 
-    # Final rendering is deterministic, not a 6th SDK call — see the module
-    # docstring and DECISIONS.md #11 for why.
-    log("[6/6] Rendering final pack and running citation/structure validation...")
+    # Final rendering is deterministic, not an 8th SDK call — it guarantees
+    # the mandatory structure/citation format regardless of what Drafting
+    # produced. See the module docstring and DECISIONS.md #11.
+    log("[7/7] Rendering final pack and running citation/structure validation...")
     markdown = render(pack)
     outlines = {doc_id: doc.outline for doc_id, doc in extracted.items() if doc.status == ReadStatus.OK}
     citation_issues = validate_citations(markdown, outlines)
     structure_issues = validate_structure(pack)
     log(
-        f"[6/6] Done. {len(citation_issues)} citation issue(s), "
+        f"[7/7] Done. {len(citation_issues)} citation issue(s), "
         f"{len(structure_issues)} structure issue(s) flagged."
     )
 

@@ -25,11 +25,16 @@ rationale is in `ARCHITECTURE.md`; judgment calls are in `DECISIONS.md`.
 - `src/agents/tools.py` — the Agent SDK tool wrapping `extraction.py`, and
   the Atlas/Entra env-var builder (`atlas_env_from_dotenv`).
 - `src/coordinator.py` — the actual pipeline: triage → retrieval → parallel
-  document analysis → conflict detection → synthesis → drafting → render +
-  validate. `_call_subagent` is the only function that talks to the SDK.
+  (batched) document analysis → conflict detection → parallel synthesis +
+  recommendations → parallel (batched) drafting → render + validate.
+  `_call_subagent` is the only function that talks to the SDK. Drafting is a
+  real subagent call (not discarded): it only ever sees/returns
+  `{id, topic, claim}` — never citations — so it cannot corrupt one; see
+  `_apply_drafted_claims` and DECISIONS.md #11.
 - `tests/` — unit tests against synthetic fixtures, runnable with
   `python -m unittest discover -s tests -v`, no API key or real corpus
-  required.
+  required. Includes `test_coordinator_helpers.py`, which covers the
+  Drafting stage's pure flatten/stitch logic (no SDK needed).
 
 ## Things to know before touching this
 
@@ -56,15 +61,23 @@ rationale is in `ARCHITECTURE.md`; judgment calls are in `DECISIONS.md`.
   The real run environment (Windows venv, see `requirements.txt`) should have
   everything needed including `claude-agent-sdk`.
 - Atlas auth is resolved (correct header is `MSF-Subscription-Key`, env var
-  `MSF_SUBSCRIPTION_KEY` — see `README.md`). `_call_subagent` has been
-  verified live, including real tool-based delegation (model calls
-  `read_corpus_document`, gets real extracted text from a real corpus file,
-  answers correctly from it) — see `test_live_minimal.py`. What's still
-  unverified: the full `run_research` pipeline end to end (all 6 stages
-  chained together, including the JSON-contract prompts for
-  triage/retrieval/conflict-detection/synthesis/drafting in
-  `agents/prompts.py`, which have only been designed, not run against a real
-  model yet). Next step when picking this back up: run `run_research` on the
-  Q1 (narrowest) question first, per the brief's own suggested "establish a
-  baseline" approach, and expect to iterate on the prompts based on actual
-  model output shape.
+  `MSF_SUBSCRIPTION_KEY` — see `README.md`). The full `run_research` pipeline
+  (all 7 stages, all 7 subagent roles) has been run live end to end,
+  repeatedly, against all three fixed questions, with 0 citation and 0
+  structure issues on every clean run — see `output/` for the current
+  generated packs. `run_q1.py` / `run_q2.py` / `run_q3.py` each run one
+  question; `run_common.py` run directly (`python run_common.py`) runs all
+  three in sequence in one process.
+- Known runtime characteristics on a memory-constrained host: Q1/Q2
+  typically complete in ~2.5–3.5 minutes; Q3 (the broadest question, most
+  findings) typically takes ~3.5–4.5 minutes, because its Synthesis/
+  Recommendations stage has highly variable model-response latency
+  (observed 54s–105s across otherwise-identical runs) that batching/
+  concurrency tuning doesn't control. The dominant cost/reliability lever
+  that *is* controllable is subprocess spawn count (see DECISIONS.md #13) —
+  batching docs/findings per call rather than one call per item.
+- The pipeline includes automatic retries at two independent layers:
+  subprocess-level crashes/timeouts (`_call_subagent`, up to 4 attempts) and
+  malformed/truncated JSON responses (`_call_subagent_json`, up to 3
+  attempts, regenerating the whole call). Transient `[retry]` lines in the
+  logs are expected and not a sign of a broken run.
