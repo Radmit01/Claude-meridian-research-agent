@@ -1,6 +1,6 @@
 import { api } from "../api.js";
 import { esc, fmtAgo, fmtSize, icons, statusClass, SET_LABELS } from "../utils.js";
-import { loadCorpus, updateCorpus, getState, subscribe } from "../store.js";
+import { loadCorpus, loadHealth, updateCorpus, getState, subscribe } from "../store.js";
 import { openUploadDocModal } from "../components/uploadDocModal.js";
 import { syncReport } from "../components/syncReport.js";
 import { toast } from "../components/toast.js";
@@ -9,12 +9,14 @@ let lastReport = null;
 
 export async function render({ view, onLeave }) {
   let data = await loadCorpus(true);
+  await loadHealth();
   let filter = "all";
   let q = "";
 
   const paint = () => {
     const c = data.counts;
     const busy = !!getState().activeRun;
+    const editsAllowed = getState().health?.allow_corpus_edits !== false;
     const match = (d) =>
       (filter === "all" || (filter === "custom" ? d.is_custom : filter === "issues" ? statusClass(d.status) !== "ok" || !d.filename : true)) &&
       (!q || `${d.doc_id} ${d.title} ${d.filename || ""}`.toLowerCase().includes(q));
@@ -23,8 +25,11 @@ export async function render({ view, onLeave }) {
         <p>Every run reads from this corpus. Upload a new document, replace a file, or sync after changing files in <span class="mono">Corpus/</span> by hand.</p></div>
         <div class="row">
           <button class="btn btn-quiet" data-sync>${icons.sync} Sync corpus</button>
-          <button class="btn btn-primary" data-upload ${busy ? "disabled title='A run is in progress'" : ""}>${icons.upload} Upload document</button>
+          ${editsAllowed
+            ? `<button class="btn btn-primary" data-upload ${busy ? "disabled title='A run is in progress'" : ""}>${icons.upload} Upload document</button>`
+            : `<button class="btn btn-primary" disabled title="Corpus edits are disabled — the hackathon rules require using only the fixed corpus supplied. Set ALLOW_CORPUS_EDITS=1 to override for local testing.">${icons.upload} Upload document</button>`}
         </div></div>
+      ${!editsAllowed ? `<div class="note" style="margin-top:12px">Corpus edits (upload/replace/restore/delete) are disabled — fixed-corpus rule. Set <span class="mono">ALLOW_CORPUS_EDITS=1</span> to override for local testing.</div>` : ""}
       ${data.extraction_error ? `<div class="note warn" style="margin-top:20px">${esc(data.extraction_error)}</div>` : ""}
       <div class="stat-strip section" style="margin-top:24px">
         <div><span class="eyebrow">Readable</span><strong>${data.extraction_error ? "—" : c.ok}</strong></div>

@@ -13,7 +13,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.coordinator import _apply_drafted_claims, _chunk, _flatten_findings_for_drafting
+import json
+
+from src.coordinator import (
+    _apply_drafted_claims,
+    _chunk,
+    _compute_batch_size,
+    _flatten_findings_for_drafting,
+    _repair_json,
+)
 from src.models import Citation, Finding
 
 
@@ -84,6 +92,65 @@ class DraftingHelpersTests(unittest.TestCase):
         self.assertEqual(result["Section A"][0].claim, "Polished claim one.")
         self.assertEqual(len(result["Section A"]), 2)
         self.assertEqual(len(result["Section B"]), 1)
+
+
+class RepairJsonTests(unittest.TestCase):
+    def test_valid_json_passes_through_unchanged(self):
+        text = '{"a": [1, 2, 3]}'
+        self.assertEqual(json.loads(_repair_json(text)), {"a": [1, 2, 3]})
+
+    def test_strips_markdown_fences(self):
+        text = '```json\n{"a": 1}\n```'
+        self.assertEqual(json.loads(_repair_json(text)), {"a": 1})
+
+    def test_repairs_truncated_array_cut_mid_item(self):
+        # Last element cut off mid-string. Least-destructive repair closes
+        # the dangling string + brackets, keeping both items (the second
+        # with its claim truncated at the cut point) rather than discarding
+        # it outright — downstream per-item validation handles any item
+        # that ends up missing a required key, so this function doesn't
+        # need to decide that itself.
+        text = '{"items": [{"id": 1, "claim": "ok"}, {"id": 2, "claim": "cut of'
+        repaired = _repair_json(text)
+        parsed = json.loads(repaired)  # must not raise
+        self.assertEqual(parsed["items"][0], {"id": 1, "claim": "ok"})
+        self.assertEqual(len(parsed["items"]), 2)
+        self.assertEqual(parsed["items"][1]["id"], 2)
+
+    def test_repairs_truncated_object_missing_closing_brace(self):
+        text = '{"findings_by_section": {"Section A": [{"id": 0, "claim": "x"}]}'
+        repaired = _repair_json(text)
+        parsed = json.loads(repaired)
+        self.assertEqual(parsed, {"findings_by_section": {"Section A": [{"id": 0, "claim": "x"}]}})
+
+    def test_leaves_unbalanced_unfixable_text_for_caller_to_reject(self):
+        # Nothing safe to trim back to (no comma at any open depth) -> caller's
+        # json.loads will still fail, which is correct: this isn't a case
+        # _repair_json claims to fix, so it must not fabricate content.
+        text = '{"a"'
+        result = _repair_json(text)
+        with self.assertRaises(json.JSONDecodeError):
+            json.loads(result)
+
+
+class ComputeBatchSizeTests(unittest.TestCase):
+    def test_sizes_batches_to_fit_one_wave_within_clamp(self):
+        # 27 items, concurrency 4 -> ceil(27/4)=7, within [3,8] -> batch=7,
+        # giving ceil(27/7)=4 batches, which fits in one wave of 4.
+        size = _compute_batch_size(27, concurrency=4)
+        self.assertEqual(size, 7)
+        import math
+
+        self.assertLessEqual(math.ceil(27 / size), 4)
+
+    def test_clamps_to_minimum_for_small_item_counts(self):
+        self.assertEqual(_compute_batch_size(2, concurrency=4), 3)
+
+    def test_clamps_to_maximum_for_large_item_counts(self):
+        self.assertEqual(_compute_batch_size(1000, concurrency=4), 8)
+
+    def test_zero_items(self):
+        self.assertEqual(_compute_batch_size(0, concurrency=4), 3)
 
 
 if __name__ == "__main__":

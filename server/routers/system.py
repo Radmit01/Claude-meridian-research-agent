@@ -9,7 +9,7 @@ from fastapi import APIRouter
 
 from src.manifest import MANIFEST
 
-from ..config import CORPUS_DIR, OUTPUT_DIR, ROOT
+from ..config import ALLOW_CORPUS_EDITS, CORPUS_DIR, OUTPUT_DIR, ROOT
 from ..services import corpus_service, pack_service
 from ..services.run_manager import STAGES, manager
 
@@ -79,4 +79,5 @@ def health():
         "corpus_files": len(glob.glob(os.path.join(CORPUS_DIR, "*.*"))),
         "manifest_documents": len(MANIFEST),
         "output_dir": os.path.relpath(OUTPUT_DIR, ROOT),
+        "allow_corpus_edits": ALLOW_CORPUS_EDITS,
     }

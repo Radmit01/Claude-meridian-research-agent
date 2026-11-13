@@ -21,6 +21,12 @@ ALLOWED_DOC_EXTENSIONS = {".docx": "docx", ".pdf": "pdf", ".xlsx": "xlsx"}
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 MAX_PACK_BYTES = 5 * 1024 * 1024
 
+# Hackathon rule: use only the fixed corpus supplied — never add, remove,
+# replace, or otherwise mutate its documents. Off by default; the dashboard
+# can still sync/view/download (read-only), but upload/replace/restore/
+# delete all stay disabled unless this is explicitly set to "1".
+ALLOW_CORPUS_EDITS = os.environ.get("ALLOW_CORPUS_EDITS") == "1"
+
 FIXED_QUESTION_SCRIPTS = [
     ("run_q1", "Q1", "Regulatory exposure"),
     ("run_q2", "Q2", "Prior relationship"),

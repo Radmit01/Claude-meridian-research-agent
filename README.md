@@ -52,6 +52,17 @@ look well-formed (it never prints secret values, only presence/length). Run
 `python atlas_client.py` to confirm the gateway itself is reachable — this is
 the first thing to re-check if a live run fails with a 401/403.
 
+### Optional performance/dev env vars
+
+All optional; the pipeline behaves exactly as before if none of these are
+set.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `MAX_CONCURRENT_SUBAGENTS` | `4` | Process-wide cap on concurrent SDK subprocess calls, shared by Document Analysis and Drafting (and, in aggregate, across all questions if `run_common.py --parallel` is used) — see DECISIONS.md #20. |
+| `CLAUDE_MODEL_FAST` | unset | Routes Planning and Drafting to a different model (e.g. a faster/cheaper tier) if set; every other stage always uses `ANTHROPIC_MODEL`. DECISIONS.md #15 found no measured speedup from this with Haiku on this gateway — left as an opt-in, not recommended by default, see DECISIONS.md #21. |
+| `RESEARCH_CACHE` | unset (`0`) | Set to `1` to cache Document Analysis findings per document in `output/.cache/analysis/`, keyed by the corpus file's own content hash + question + prompt version (DECISIONS.md #24). **Dev-only — never use this for a submission pack or the graded demo**, since a cached run doesn't actually exercise the live model call for that document. |
+
 ## Running
 
 The three fixed questions each have a dedicated entry-point script:
@@ -63,10 +74,20 @@ python run_q3.py   # full pre-engagement pack
 ```
 
 Each writes its research pack to `output/` and prints a citation/structure
-validation summary. Run all three in one command/process with:
+validation summary, per-stage timings, and token/cost usage. Run all three
+in one command/process with:
 
 ```bash
 python run_common.py
+```
+
+This runs Q1 → Q2 → Q3 **in that order, sequentially** by default, as the
+brief requires for the graded demo. For local iteration, `--parallel` runs
+all three concurrently instead — never use this for the submission pack or
+the judged demo, only for your own faster feedback loop while developing:
+
+```bash
+python run_common.py --parallel
 ```
 
 (Opens a browser for Entra login on first use; subsequent stages reuse the
@@ -78,15 +99,18 @@ from src.coordinator import run_research
 import asyncio
 
 result = asyncio.run(run_research(
-    question="What is Meridian's regulatory/compliance exposure?",
-    corpus_dir="/path/to/corpus",
+    "What is Meridian's regulatory/compliance exposure?",
+    # corpus_dir defaults to "Corpus" — pass a different path to override.
 ))
 print(result["markdown"])
 ```
 
 `result` also contains `pack` (the structured `ResearchPack`), `citation_issues`
-(any citations that failed deterministic validation), and `structure_issues`
-(structural sanity checks on the pack).
+(any citations that failed deterministic validation), `structure_issues`
+(structural sanity checks on the pack), `sub_questions` (the Planning
+subagent's breakdown of the question), `timings` (summed model-call seconds
+per stage), and `usage` (`call_count`, `total_in_tok`, `total_out_tok`,
+`total_cost_usd` across the whole run).
 
 ## Dashboard (frontend)
 
@@ -111,7 +135,15 @@ What it does:
     added/modified/missing files and files no DOC-ID claims (shift-click to force a full re-parse).
 - **System:** env-var and dependency checks (presence only, never values).
 
-Notes on uploads:
+**`ALLOW_CORPUS_EDITS`** (unset by default): the hackathon rules require
+using only the fixed corpus supplied, with no additions, removals, or
+replacements. Upload/replace/restore/delete are disabled (HTTP 403) unless
+this is explicitly set to `1`; sync/list/download stay available since
+they're read-only. The frontend hides the upload/replace/restore/delete
+controls whenever `/api/health` reports the flag is off, so this isn't
+just a backend-only guard.
+
+Notes on uploads (only relevant with `ALLOW_CORPUS_EDITS=1`):
 - Replaced and deleted files are moved to `Corpus/.backup/`, not destroyed.
 - Uploaded documents are recorded in `Corpus/.custom_manifest.json` and added to the
   manifest only inside the dashboard process. `run_qN.py` still uses the original 28.

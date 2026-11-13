@@ -1,0 +1,254 @@
+{
+ "id": "5dfd6c30a47e",
+ "question": "What are Meridian Financial Group's principal regulatory and compliance exposures?",
+ "output_name": "Q1_Regulatory_and_Compliance_Exposure.md",
+ "status": "succeeded",
+ "created_at": 1794579638.3646896,
+ "started_at": 1794579638.3707523,
+ "finished_at": 1794579920.904384,
+ "elapsed": 282.53363156318665,
+ "stage": 8,
+ "stage_durations": {
+  "1": 44.0,
+  "2": 17.1,
+  "3": 55.1,
+  "4": 22.2,
+  "5": 68.4,
+  "6": 58.4
+ },
+ "error": null,
+ "summary": {
+  "output_name": "Q1_Regulatory_and_Compliance_Exposure.md",
+  "citation_issues": [],
+  "structure_issues": [],
+  "sections": 9,
+  "conflicts": 1,
+  "gaps": 5,
+  "sources": 28
+ },
+ "event_count": 37,
+ "events": [
+  {
+   "seq": 0,
+   "t": 1794579638.3707662,
+   "kind": "info",
+   "text": "Run 5dfd6c30a47e started"
+  },
+  {
+   "seq": 1,
+   "t": 1794579638.370775,
+   "kind": "info",
+   "text": "Question: What are Meridian Financial Group's principal regulatory and compliance exposures?"
+  },
+  {
+   "seq": 2,
+   "t": 1794579638.6449888,
+   "kind": "stage",
+   "text": "[0/7] Building Atlas env (Entra login may open a browser now)..."
+  },
+  {
+   "seq": 3,
+   "t": 1794579655.585508,
+   "kind": "log",
+   "text": "[0/7] Env ready."
+  },
+  {
+   "seq": 4,
+   "t": 1794579655.585579,
+   "kind": "stage",
+   "text": "[1/7] Stage 0 (Triage): opening and classifying all 28 corpus documents..."
+  },
+  {
+   "seq": 5,
+   "t": 1794579661.613511,
+   "kind": "log",
+   "text": "[1/7] Triage input ready: 26 readable, 2 unreadable/empty. Calling subagent..."
+  },
+  {
+   "seq": 6,
+   "t": 1794579699.6188447,
+   "kind": "log",
+   "text": "[1/7] Triage complete: 26 documents scored. (44.0s)"
+  },
+  {
+   "seq": 7,
+   "t": 1794579699.6189814,
+   "kind": "stage",
+   "text": "[2/7] Stage 1 (Retrieval): selecting which documents to deep-analyze..."
+  },
+  {
+   "seq": 8,
+   "t": 1794579716.7590988,
+   "kind": "log",
+   "text": "[2/7] Retrieval complete: 17 documents selected: ['CL-01', 'CL-02', 'CL-05', 'CL-06', 'CL-07', 'CL-08', 'CL-09', 'EX-01', 'EX-02', 'EX-03', 'EX-07', 'EX-08', 'EX-09', 'PV-05', 'PV-09', 'CL-04', 'EX-04'] (17.1s)"
+  },
+  {
+   "seq": 9,
+   "t": 1794579716.7593145,
+   "kind": "stage",
+   "text": "[3/7] Stage 2 (Document Analysis): analyzing 17 documents in 4 batch(es) of up to 5..."
+  },
+  {
+   "seq": 10,
+   "t": 1794579751.6086054,
+   "kind": "log",
+   "text": "[3/7]   CL-01: 5 findings extracted."
+  },
+  {
+   "seq": 11,
+   "t": 1794579751.608981,
+   "kind": "log",
+   "text": "[3/7]   CL-02: 3 findings extracted."
+  },
+  {
+   "seq": 12,
+   "t": 1794579751.609176,
+   "kind": "log",
+   "text": "[3/7]   CL-05: 4 findings extracted."
+  },
+  {
+   "seq": 13,
+   "t": 1794579751.6095767,
+   "kind": "log",
+   "text": "[3/7]   CL-06: 5 findings extracted."
+  },
+  {
+   "seq": 14,
+   "t": 1794579751.6098316,
+   "kind": "log",
+   "text": "[3/7]   CL-07: 4 findings extracted."
+  },
+  {
+   "seq": 15,
+   "t": 1794579756.8227644,
+   "kind": "log",
+   "text": "[3/7]   EX-07: 4 findings extracted."
+  },
+  {
+   "seq": 16,
+   "t": 1794579756.835007,
+   "kind": "log",
+   "text": "[3/7]   EX-08: 3 findings extracted."
+  },
+  {
+   "seq": 17,
+   "t": 1794579756.8361413,
+   "kind": "log",
+   "text": "[3/7]   EX-09: 5 findings extracted."
+  },
+  {
+   "seq": 18,
+   "t": 1794579756.8388033,
+   "kind": "log",
+   "text": "[3/7]   PV-05: 6 findings extracted."
+  },
+  {
+   "seq": 19,
+   "t": 1794579756.839671,
+   "kind": "log",
+   "text": "[3/7]   PV-09: 4 findings extracted."
+  },
+  {
+   "seq": 20,
+   "t": 1794579756.890571,
+   "kind": "log",
+   "text": "[3/7]   CL-08: 6 findings extracted."
+  },
+  {
+   "seq": 21,
+   "t": 1794579756.890898,
+   "kind": "log",
+   "text": "[3/7]   CL-09: 4 findings extracted."
+  },
+  {
+   "seq": 22,
+   "t": 1794579756.891179,
+   "kind": "log",
+   "text": "[3/7]   EX-01: 6 findings extracted."
+  },
+  {
+   "seq": 23,
+   "t": 1794579756.891417,
+   "kind": "log",
+   "text": "[3/7]   EX-02: 5 findings extracted."
+  },
+  {
+   "seq": 24,
+   "t": 1794579756.8916142,
+   "kind": "log",
+   "text": "[3/7]   EX-03: 4 findings extracted."
+  },
+  {
+   "seq": 25,
+   "t": 1794579771.8748002,
+   "kind": "log",
+   "text": "[3/7]   CL-04: 7 findings extracted."
+  },
+  {
+   "seq": 26,
+   "t": 1794579771.8749352,
+   "kind": "log",
+   "text": "[3/7]   EX-04: 3 findings extracted."
+  },
+  {
+   "seq": 27,
+   "t": 1794579771.8752122,
+   "kind": "log",
+   "text": "[3/7] Document Analysis complete: 78 total findings across 17 documents. (55.1s)"
+  },
+  {
+   "seq": 28,
+   "t": 1794579771.875378,
+   "kind": "stage",
+   "text": "[4/7] Stage 3 (Conflict Detection): comparing findings for contradictions..."
+  },
+  {
+   "seq": 29,
+   "t": 1794579794.0619197,
+   "kind": "log",
+   "text": "[4/7] Conflict Detection complete: 1 conflict(s) found. (22.2s)"
+  },
+  {
+   "seq": 30,
+   "t": 1794579794.0621817,
+   "kind": "stage",
+   "text": "[5/7] Stage 4 (Synthesis): organizing findings, deriving gaps and recommendations..."
+  },
+  {
+   "seq": 31,
+   "t": 1794579862.4401479,
+   "kind": "log",
+   "text": "[5/7] Synthesis complete: 9 section(s), 5 coverage gap(s), 13 recommendation(s) derived. (68.4s)"
+  },
+  {
+   "seq": 32,
+   "t": 1794579862.4405613,
+   "kind": "stage",
+   "text": "[6/7] Stage 5 (Drafting): polishing 90 finding(s) in 4 batch(es) of up to 25..."
+  },
+  {
+   "seq": 33,
+   "t": 1794579920.8292205,
+   "kind": "log",
+   "text": "[6/7] Drafting complete: 90/90 finding(s) redrafted. (58.4s)"
+  },
+  {
+   "seq": 34,
+   "t": 1794579920.8294756,
+   "kind": "stage",
+   "text": "[7/7] Rendering final pack and running citation/structure validation..."
+  },
+  {
+   "seq": 35,
+   "t": 1794579920.8820693,
+   "kind": "log",
+   "text": "[7/7] Done. 0 citation issue(s), 0 structure issue(s) flagged."
+  },
+  {
+   "seq": 36,
+   "t": 1794579920.9043684,
+   "kind": "done",
+   "text": "Pack written to output/Q1_Regulatory_and_Compliance_Exposure.md"
+  }
+ ]
+}

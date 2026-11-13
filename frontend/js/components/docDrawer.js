@@ -4,7 +4,7 @@ import { api } from "../api.js";
 import { esc, fmtAgo, fmtSize, icons, loading, errorBox, setKey } from "../utils.js";
 import { openDrawer, setDrawer, closeDrawer } from "./drawer.js";
 import { openUploadDocModal } from "./uploadDocModal.js";
-import { getState, updateCorpus } from "../store.js";
+import { getState, loadHealth, updateCorpus } from "../store.js";
 import { toast } from "./toast.js";
 
 const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -18,6 +18,10 @@ export async function openDocDrawer(docId, ref = "", { onChange } = {}) {
   const nref = norm(ref);
   const hitIdx = nref ? d.outline.findIndex((o) => { const n = norm(o.ref); return n && (n === nref || n.includes(nref) || nref.includes(n)); }) : -1;
   const busy = !!getState().activeRun;
+  await loadHealth();
+  const editsAllowed = getState().health?.allow_corpus_edits !== false;
+  const editsTitle = "Corpus edits are disabled — the hackathon rules require using only the fixed corpus supplied. Set ALLOW_CORPUS_EDITS=1 to override for local testing.";
+  const disabledAttr = (reason) => (reason ? `disabled title="${esc(reason)}"` : "");
 
   const drawer = setDrawer(`
     <div class="drawer-head">
@@ -29,10 +33,11 @@ export async function openDocDrawer(docId, ref = "", { onChange } = {}) {
     </div>
     <div class="drawer-actions">
       ${d.filename ? `<a class="btn btn-quiet btn-sm" href="${api.corpus.fileUrl(d.doc_id)}">${icons.download} Download</a>` : ""}
-      <button class="btn btn-quiet btn-sm" data-act="replace" ${busy ? "disabled" : ""}>${icons.upload} Replace file</button>
-      ${d.backups.length ? `<button class="btn btn-quiet btn-sm" data-act="restore" ${busy ? "disabled" : ""} title="${esc(d.backups[0])}">Restore previous</button>` : ""}
-      ${d.is_custom ? `<button class="btn btn-quiet btn-sm danger" data-act="delete" ${busy ? "disabled" : ""}>Delete</button>` : ""}
+      <button class="btn btn-quiet btn-sm" data-act="replace" ${!editsAllowed ? disabledAttr(editsTitle) : busy ? "disabled" : ""}>${icons.upload} Replace file</button>
+      ${d.backups.length ? `<button class="btn btn-quiet btn-sm" data-act="restore" ${!editsAllowed ? disabledAttr(editsTitle) : busy ? "disabled" : `title="${esc(d.backups[0])}"`}>Restore previous</button>` : ""}
+      ${d.is_custom ? `<button class="btn btn-quiet btn-sm danger" data-act="delete" ${!editsAllowed ? disabledAttr(editsTitle) : busy ? "disabled" : ""}>Delete</button>` : ""}
     </div>
+    ${!editsAllowed ? `<div class="note" style="margin:0 20px 16px">Corpus edits are disabled — fixed-corpus rule. Set <span class="mono">ALLOW_CORPUS_EDITS=1</span> to override for local testing.</div>` : ""}
     <div class="drawer-body">
       ${ref ? `<div class="note ${hitIdx >= 0 ? "pine" : "warn"}" style="margin-bottom:16px">Cited as <strong class="mono" style="font-size:12.5px">[${esc(d.doc_id)}, ${esc(ref)}]</strong>${hitIdx >= 0 ? "" : " — no exactly matching section label in the extracted outline."}</div>` : ""}
       ${d.extraction_error ? `<div class="note warn" style="margin-bottom:16px">${esc(d.extraction_error)}</div>` : ""}

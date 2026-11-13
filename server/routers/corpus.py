@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 
-from ..deps import ensure_no_active_run
+from ..deps import ensure_corpus_edits_allowed, ensure_no_active_run
 from ..schemas import SyncRequest
 from ..services import corpus_service as svc
 from ..services.corpus_service import CorpusError
@@ -39,7 +39,7 @@ async def sync(body: Optional[SyncRequest] = None):
     return await _call(svc.sync, force=bool(body and body.force))
 
 
-@router.post("/upload", dependencies=[Depends(ensure_no_active_run)])
+@router.post("/upload", dependencies=[Depends(ensure_corpus_edits_allowed), Depends(ensure_no_active_run)])
 async def upload(
     request: Request,
     filename: str = Query(..., description="Original file name, including extension"),
@@ -73,14 +73,14 @@ async def download(doc_id: str):
     return FileResponse(path, filename=path.rsplit("/", 1)[-1].rsplit("\\", 1)[-1])
 
 
-@router.post("/{doc_id}/restore", dependencies=[Depends(ensure_no_active_run)])
+@router.post("/{doc_id}/restore", dependencies=[Depends(ensure_corpus_edits_allowed), Depends(ensure_no_active_run)])
 async def restore(doc_id: str):
     result = await _call(svc.restore, doc_id)
     await _call(svc.sync)
     return result
 
 
-@router.delete("/{doc_id}", dependencies=[Depends(ensure_no_active_run)])
+@router.delete("/{doc_id}", dependencies=[Depends(ensure_corpus_edits_allowed), Depends(ensure_no_active_run)])
 async def delete(doc_id: str):
     result = await _call(svc.delete, doc_id)
     await _call(svc.sync)

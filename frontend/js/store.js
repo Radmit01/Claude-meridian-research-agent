@@ -3,7 +3,7 @@
 import { api } from "./api.js";
 
 const listeners = new Map();
-const state = { activeRun: null, corpus: null };
+const state = { activeRun: null, corpus: null, health: null };
 
 export function getState() {
   return state;
@@ -34,6 +34,17 @@ export function loadCorpus(force = false) {
 export function updateCorpus(listing) {
   corpusPromise = Promise.resolve(listing);
   setState({ corpus: listing });
+}
+
+let healthPromise = null;
+/** Cached /api/health — used to gate corpus-edit controls on
+ * allow_corpus_edits (the fixed-corpus hackathon rule; off by default). */
+export function loadHealth(force = false) {
+  if (force || !healthPromise) {
+    healthPromise = api.health().then((h) => { setState({ health: h }); return h; })
+      .catch((e) => { healthPromise = null; throw e; });
+  }
+  return healthPromise;
 }
 
 export async function pollActiveRun() {
