@@ -5,15 +5,18 @@
 Coordinator + 7 subagent roles. The brief names four specific minimum roles —
 Search, Document Analysis, Synthesis, Drafting — and permits additional roles
 for meaningful decomposition. This system covers all four named roles plus
-three more: Triage + Retrieval together implement Search (split because
-Triage must cheaply classify all 28 documents before Retrieval selects a
-subset to deep-analyze), Document Analysis, Conflict Detection (an added
-role — the corpus was read in full during design and confirmed to embed its
-primary conflict (CL-05 vs EX-07) and reinforcing signals *across* source
-sets, not within one; folding conflict detection into Synthesis would have
-made that step overloaded and harder to test/inspect in isolation), Synthesis
-+ Recommendations (split from one combined call so they run in parallel —
-see "Parallelism" below), and Drafting.
+three more: Triage + Retrieval together implement Search, issued as ONE
+subagent call (DECISIONS.md #22) since Retrieval never needed a second
+round-trip once Triage's scores exist — a dependency-free BM25
+keyword-overlap score (`src/ranking.py`) is passed in as a selection hint,
+never as a filter. Document Analysis (batched, parallel — DECISIONS.md
+#13/#20), Conflict Detection (an added role — the corpus was read in full
+during design and confirmed to embed its primary conflict (CL-05 vs EX-07)
+and reinforcing signals *across* source sets, not within one; folding
+conflict detection into Synthesis would have made that step overloaded and
+harder to test/inspect in isolation), Synthesis + Recommendations (split
+from one combined call so they run in parallel — see "Parallelism" below),
+and Drafting.
 
 ```
                          ┌───────────────┐
@@ -21,19 +24,14 @@ see "Parallelism" below), and Drafting.
                          └───────┬───────┘
                                  │
                  ┌───────────────┴───────────────┐
-                 │ Stage 0: Triage (all 28 docs)  │   sequential, lightweight
-                 │  - open every doc              │
-                 │  - classify: ok / empty /      │
-                 │    open-error                  │
-                 │  - 1-line relevance score per   │
-                 │    doc vs. the question         │
-                 └───────────────┬───────────────┘
-                                 │
-                 ┌───────────────┴───────────────┐
-                 │ Stage 1: Search/Retrieval      │   sequential (1 agent)
-                 │  - picks relevant doc subset    │
-                 │    from triage output           │
-                 │  - justifies inclusion/exclusion│
+                 │ Stage 0+1: Planning            │   ONE subagent call —
+                 │  - open & classify all 28 docs │   logged as two stages
+                 │  - BM25 score/rank (hint only,  │   ([1/7] Triage, [2/7]
+                 │    local computation, never a   │   Retrieval) for
+                 │    filter)                       │   dashboard/log
+                 │  - score relevance, select a    │   compatibility, but
+                 │    subset to deep-analyze        │   one round-trip does
+                 │  - derive 3-8 sub_questions      │   both jobs
                  └───────────────┬───────────────┘
                                  │
           ┌──────────────────────┼──────────────────────┐
@@ -41,36 +39,37 @@ see "Parallelism" below), and Drafting.
    ┌──────┴──────┐        ┌──────┴──────┐        ┌──────┴──────┐
    │ Doc Analysis │  ...   │ Doc Analysis │  ...   │ Doc Analysis │   PARALLEL
    │ agent (batch)│        │ agent (batch)│        │ agent (batch)│   fan-out,
-   └──────┬──────┘        └──────┬──────┘        └──────┬──────┘   a fixed-
-          │                      │                      │          size batch
-          └──────────────────────┼──────────────────────┘          of docs
-                                 │                                   per call
+   └──────┬──────┘        └──────┬──────┘        └──────┬──────┘   batch size
+          │                      │                      │          computed to
+          └──────────────────────┼──────────────────────┘          fit one wave
+                                 │                                   at the
+                   (every finding gets a stable                      configured
+                    integer id — DECISIONS.md #23)                   concurrency
                  ┌───────────────┴───────────────┐
-                 │ Stage 3: Conflict Detection    │   sequential (1 agent)
-                 │  - groups findings by topic     │
-                 │  - flags contradictions         │
-                 │  - proposes resolution basis     │
-                 │    (recency/authority/independence)│
-                 └───────────────┬───────────────┘
+                 │ Stage 3: Conflict Detection    │   sequential (1 agent),
+                 │  - groups findings by topic     │   references findings
+                 │  - flags contradictions         │   by id — citations are
+                 │  - proposes resolution basis     │   looked up from the
+                 │    (recency/authority/independence)│ referenced finding,
+                 └───────────────┬───────────────┘   never model-written
                                  │
                  ┌───────────────┴───────────────┐
-                 │ Stage 4: Synthesis             │
-          ┌──────┤  + Recommendations (PARALLEL)  ├──────┐
-          │      │  - Synthesis builds sub-headed  │      │
-          │      │    Findings, derives Gaps       │      │
-          │      │  - Recommendations derives       │      │
-          │      │    grounded engagement focus     │      │
-          │      │    areas, independently          │      │
-          │      └──────────────────────────────────┘      │
+                 │ Stage 4: Synthesis             │   also id-referencing:
+          ┌──────┤  + Recommendations (PARALLEL)  ├──────┐  sections list
+          │      │  - Synthesis groups finding ids │      │  finding ids, not
+          │      │    under sections, derives Gaps │      │  full objects —
+          │      │  - Recommendations references a  │      │  this is what cut
+          │      │    finding_id per recommendation │      │  Synthesis's
+          │      └──────────────────────────────────┘      │  output tokens
           └──────────────────────┬───────────────────────┘
                                  │
                  ┌───────────────┴───────────────┐
-                 │ Stage 5: Drafting (PARALLEL    │   batched, same
-                 │  across batches)                │   pattern as Stage 2
-                 │  - rewrites each finding's claim│
-                 │    into polished client prose   │
-                 │  - sees/returns {id,topic,claim}│
-                 │    ONLY — never citations, so   │
+                 │ Stage 5: Drafting (PARALLEL    │   batched (higher batch-
+                 │  across batches)                │   size ceiling than
+                 │  - rewrites each finding's claim│   Document Analysis —
+                 │    into polished client prose   │   tiny payload, no doc
+                 │  - sees/returns {id,topic,claim}│   text, no citation, so
+                 │    ONLY — never citations, so   │   it cannot corrupt one
                  │    it cannot corrupt one         │
                  └───────────────┬───────────────┘
                                  │
@@ -136,35 +135,48 @@ giving it real, narrowly-scoped work instead of discarding it.
 Three stages are parallelized, each for the same reason: independent units
 of work with no shared state or ordering dependency between them.
 
-- **Stage 2 (Document Analysis)** — documents are grouped into fixed-size
-  batches (see `_DOC_ANALYSIS_BATCH_SIZE`), each batch analyzed by an
-  independent subagent call, run with bounded concurrency
-  (`_DOC_ANALYSIS_CONCURRENCY`).
+- **Stage 2 (Document Analysis)** — documents are grouped into batches
+  sized by `_compute_batch_size` (DECISIONS.md #20): computed per run so
+  the number of batches fits within `MAX_CONCURRENT_SUBAGENTS` wherever the
+  document count allows, rather than a fixed size. Every batch then runs
+  under one shared, module-level semaphore.
 - **Stage 4 (Synthesis + Recommendations)** — these were one combined call;
   splitting them lets both run concurrently instead of sequentially, since
   Recommendations only needs the same raw findings/conflicts Synthesis
-  gets, not Synthesis's organized output.
-- **Stage 5 (Drafting)** — findings are grouped into fixed-size batches (see
-  `_DRAFTING_BATCH_SIZE`) for the same reason as Stage 2: one call per
-  finding would multiply subprocess spawns, one call for every finding at
-  once risks an oversized response.
+  gets, not Synthesis's organized output. Both reference findings by id
+  (DECISIONS.md #23) rather than re-emitting them, which is what let
+  Synthesis's own generation time drop sharply once it no longer had to
+  retype every finding's topic/claim/citation in its response.
+- **Stage 5 (Drafting)** — findings are grouped into batches sized by the
+  same `_compute_batch_size`, but with a much higher ceiling than Document
+  Analysis's (60 vs 8): a Drafting item is a tiny `{id, topic, claim}`
+  triple with no document text and no citation, so a far larger batch
+  still fits comfortably, and measured live, capping it at the same
+  ceiling as Document Analysis regressed a 114-finding run from one wave
+  to four sequential rounds (127.9s instead of the ~20-55s the larger
+  ceiling restores).
 
 Every other stage consumes the full output of the previous stage and cannot
-start earlier, so they run sequentially. Stage 0 (triage) is cheap enough
-(metadata/open-check, not full reasoning) that it runs as a single pass
-rather than 28 parallel agents — fanning out 28 trivial opens would add
-coordination overhead without saving wall-clock time that matters at this
-corpus size. (Stage 0's local file *extraction*, as opposed to its one
-subagent call, does run concurrently across all 28 documents via worker
+start earlier, so they run sequentially. The merged Planning call (Stage
+0+1, DECISIONS.md #22) doesn't parallelize Triage against Retrieval because
+there was never real parallelism to extract — Retrieval strictly needed
+Triage's scores, so merging them into one round-trip is the correct fix,
+not fanning them out. Stage 0's local file *extraction* (as opposed to its
+one subagent call) does run concurrently across all 28 documents via worker
 threads — pure local parsing, no subprocess/network involved, so this is a
-free speed-up rather than a design tradeoff.)
+free speed-up rather than a design tradeoff.
 
 Batching documents/findings into a single subagent call, rather than one
 call per item, is also the dominant lever for reliability on a
 memory-constrained host: the SDK spawns a fresh CLI subprocess per call, and
 that spawn — not model latency or per-call token volume — was the actual
 cost/crash bottleneck observed in practice. Fewer, larger calls means fewer
-spawns.
+spawns. The concurrency semaphore (`_subagent_semaphore`) is a single
+module-level object shared by Document Analysis and Drafting rather than
+one per stage, so `run_common.py --parallel` (running all three questions
+at once) can't exceed the configured cap in aggregate — every question's
+stages contend for the same slots instead of each question getting its own
+separate allowance.
 
 ## Context strategy
 
@@ -179,10 +191,10 @@ window. The design avoids this with a strict information-funnel:
 - Stage 1 (retrieval) sees the triage table (not raw content) and the question,
   and returns a shortlist of doc IDs with a one-line justification each.
 - Stage 2 (document analysis) is the only stage that ever loads a document's
-  full extracted text, in fixed-size batches (`_DOC_ANALYSIS_BATCH_SIZE`)
-  rather than the full retrieved set at once. Its output is a compact list of
-  structured `Finding` objects (claim, citation, topic tags) — the raw text
-  never leaves this stage.
+  full extracted text, in batches sized by `_compute_batch_size` (DECISIONS.md
+  #20) rather than the full retrieved set at once. Its output is a compact
+  list of structured `Finding` objects (claim, citation, topic tags) — the
+  raw text never leaves this stage.
 - Stages 3–4 (conflict detection, synthesis + recommendations) operate purely
   on the structured `Finding`/`Conflict`/`Gap` objects accumulated so far,
   never on raw document text. This keeps their context bounded by the number

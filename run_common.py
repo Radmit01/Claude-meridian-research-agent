@@ -35,7 +35,7 @@ async def run_pack(question: str, output_path: str) -> None:
         print(f"\n--- RUN FAILED after {elapsed:.1f}s — full traceback below ---")
         traceback.print_exc()
         print(
-            "\nNote which [n/6] step was the last one printed above — that's "
+            "\nNote which [n/7] step was the last one printed above — that's "
             "the stage that failed, not necessarily where the traceback's "
             "innermost frame points."
         )
@@ -60,19 +60,47 @@ async def run_pack(question: str, output_path: str) -> None:
     print(f"Coverage gaps: {len(pack.gaps)}")
     print(f"Sources consulted: {len(pack.sources_consulted)}")
 
+    sub_questions = result.get("sub_questions") or []
+    if sub_questions:
+        print(f"\nSub-questions ({len(sub_questions)}):")
+        for sq in sub_questions:
+            print(f"  - {sq}")
+
+    timings = result.get("timings") or {}
+    if timings:
+        print("\nPer-stage timings (summed model-call time; parallel stages' wall-clock is shorter — see the [n/7] log line above for that):")
+        for stage, seconds in timings.items():
+            print(f"  {stage}: {seconds:.1f}s")
+
+    usage = result.get("usage") or {}
+    if usage:
+        print(
+            f"\nUsage: {usage.get('call_count', 0)} subagent call(s), "
+            f"{usage.get('total_in_tok', 0)} input tok, {usage.get('total_out_tok', 0)} output tok, "
+            f"${usage.get('total_cost_usd', 0.0):.4f}"
+        )
+
 
 def main(question: str, output_path: str) -> None:
     asyncio.run(run_pack(question, output_path))
 
 
-async def run_all() -> bool:
-    """Runs Q1, then Q2, then Q3 in one process so all three research packs
-    are produced from a single command. QUESTION/OUTPUT_PATH are imported
-    from each run_qN.py rather than duplicated here, so there is still only
-    one place that defines each question's text and output filename.
-    Imported inside this function (not at module top-level) because each
-    run_qN.py itself does `from run_common import main` — importing them at
-    module load time would be circular.
+async def run_all(parallel: bool = False) -> bool:
+    """Runs Q1, Q2, Q3 so all three research packs are produced from a
+    single command. QUESTION/OUTPUT_PATH are imported from each run_qN.py
+    rather than duplicated here, so there is still only one place that
+    defines each question's text and output filename. Imported inside this
+    function (not at module top-level) because each run_qN.py itself does
+    `from run_common import main` — importing them at module load time
+    would be circular.
+
+    Default is sequential, in order (Q1 -> Q2 -> Q3), as the brief requires.
+    `parallel=True` (python run_common.py --parallel) runs all three
+    concurrently instead — useful for local iteration speed, never used for
+    the graded sequential demo. coordinator.py's module-level
+    _subagent_semaphore still caps total concurrent subagent calls across
+    all three questions combined, so this can't overwhelm the host beyond
+    MAX_CONCURRENT_SUBAGENTS regardless of how many questions run at once.
     """
     import run_q1
     import run_q2
@@ -83,15 +111,27 @@ async def run_all() -> bool:
         ("run_q2.py", run_q2.QUESTION, run_q2.OUTPUT_PATH),
         ("run_q3.py", run_q3.QUESTION, run_q3.OUTPUT_PATH),
     ]
-    results: list[tuple[str, bool]] = []
-    for name, question, output_path in entries:
-        print(f"\n{'=' * 70}\nRunning {name} -> {output_path}\n{'=' * 70}")
-        try:
-            await run_pack(question, output_path)
-            results.append((name, True))
-        except Exception:
-            results.append((name, False))
-            print(f"\n{name} FAILED — continuing with the remaining question(s).")
+
+    if parallel:
+        print(f"\n{'=' * 70}\nRunning all three questions CONCURRENTLY (--parallel)\n{'=' * 70}")
+        outcomes = await asyncio.gather(
+            *(run_pack(question, output_path) for _, question, output_path in entries),
+            return_exceptions=True,
+        )
+        results = [(name, not isinstance(outcome, BaseException)) for (name, _, _), outcome in zip(entries, outcomes)]
+        for (name, _, _), outcome in zip(entries, outcomes):
+            if isinstance(outcome, BaseException):
+                print(f"\n{name} FAILED: {type(outcome).__name__}: {outcome}")
+    else:
+        results = []
+        for name, question, output_path in entries:
+            print(f"\n{'=' * 70}\nRunning {name} -> {output_path}\n{'=' * 70}")
+            try:
+                await run_pack(question, output_path)
+                results.append((name, True))
+            except Exception:
+                results.append((name, False))
+                print(f"\n{name} FAILED — continuing with the remaining question(s).")
 
     print(f"\n{'=' * 70}\nSummary\n{'=' * 70}")
     for name, ok in results:
@@ -103,5 +143,5 @@ async def run_all() -> bool:
 if __name__ == "__main__":
     import sys
 
-    all_ok = asyncio.run(run_all())
+    all_ok = asyncio.run(run_all(parallel="--parallel" in sys.argv))
     sys.exit(0 if all_ok else 1)

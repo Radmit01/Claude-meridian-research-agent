@@ -1,0 +1,1119 @@
+{
+ "question": "What are Meridian Financial Group's principal regulatory and compliance exposures?",
+ "findings_by_section": {
+  "Regulatory regimes and supervisory priorities": [
+   {
+    "topic": "Regulatory regimes and supervisory engagement",
+    "claim": "The Group is authorised by the FCA and PRA in the UK, with subsidiary authorisations in Ireland, Luxembourg, Singapore and Hong Kong. During FY2025 it engaged with supervisors on financial crime controls, operational resilience readiness and consumer outcomes.",
+    "citation": {
+     "doc_id": "CL-01",
+     "ref": "Section 4 \u2014 Regulatory Environment"
+    }
+   },
+   {
+    "topic": "Regulatory priorities overview",
+    "claim": "The notice sets out six supervisory priority areas for mid-size firms: financial crime, operational resilience, third-party/outsourcing, consumer outcomes, data and cross-border transfers, and AI. It is addressed to boards and senior management function holders.",
+    "citation": {
+     "doc_id": "EX-01",
+     "ref": "Purpose of this Notice"
+    }
+   },
+   {
+    "topic": "Financial crime expectations",
+    "claim": "Customer due diligence (CDD), enhanced due diligence (EDD) for complex ownership, sanctions screening and transaction monitoring controls must be effective in practice. Supervisors stress periodic tuning and testing, as well as financial crime resourcing. Where firms expand into higher-risk segments, control capability must be scaled in advance of growth.",
+    "citation": {
+     "doc_id": "EX-01",
+     "ref": "Priority Area One \u2014 Financial Crime Controls"
+    }
+   },
+   {
+    "topic": "Operational resilience expectations",
+    "claim": "Firms must identify important business services, set impact tolerances, map supporting resources (including third parties) and complete scenario testing. Incomplete dependency mapping is the most commonly incomplete element and is considered a material shortcoming.",
+    "citation": {
+     "doc_id": "EX-01",
+     "ref": "Priority Area Two \u2014 Operational Resilience"
+    }
+   },
+   {
+    "topic": "Third-party expectations",
+    "claim": "Firms must keep a complete register of material outsourcing, documented exit plans for all critical suppliers, contractual audit rights and a concentration risk assessment.",
+    "citation": {
+     "doc_id": "EX-01",
+     "ref": "Priority Area Three \u2014 Third-Party and Outsourcing Risk"
+    }
+   },
+   {
+    "topic": "Consumer outcomes expectations",
+    "claim": "Firms must evidence good customer outcomes across the product lifecycle, including for legacy products no longer actively sold.",
+    "citation": {
+     "doc_id": "EX-01",
+     "ref": "Priority Area Four \u2014 Consumer Outcomes"
+    }
+   },
+   {
+    "topic": "Data and cross-border expectations",
+    "claim": "Multi-jurisdiction firms must evidence lawful transfer mechanisms, defined retention schedules and control over data in cloud environments.",
+    "citation": {
+     "doc_id": "EX-01",
+     "ref": "Priority Area Five \u2014 Data and Cross-Border Transfers"
+    }
+   },
+   {
+    "topic": "AI expectations",
+    "claim": "Firms deploying AI must keep an AI inventory, apply proportionate governance and model risk controls, evidence human oversight of material decisions, and assess consumer and conduct implications. Supervisors say firms should not scale deployment ahead of governance.",
+    "citation": {
+     "doc_id": "EX-01",
+     "ref": "Priority Area Six \u2014 Artificial Intelligence"
+    }
+   },
+   {
+    "topic": "AI regulation",
+    "claim": "Emerging AI requirements comprise an inventory of AI systems, risk classification, human oversight of consequential decisions, transparency, bias and drift testing, and senior management accountability. Firms using AI in onboarding, credit or advice face the highest expectations.",
+    "citation": {
+     "doc_id": "EX-09",
+     "ref": "Artificial Intelligence"
+    }
+   },
+   {
+    "topic": "Digital operational resilience / third-party",
+    "claim": "Requirements extend to critical ICT providers and include contractual minimum provisions, incident classification and reporting timelines, threat-led penetration testing, and a register of information covering all third-party arrangements.",
+    "citation": {
+     "doc_id": "EX-09",
+     "ref": "Digital Operational Resilience"
+    }
+   },
+   {
+    "topic": "Data and privacy / cross-border",
+    "claim": "There is increasing scrutiny of cross-border transfer mechanisms, retention discipline, and the use of personal data in AI training and operation.",
+    "citation": {
+     "doc_id": "EX-09",
+     "ref": "Data and Privacy"
+    }
+   },
+   {
+    "topic": "Financial crime supervisory priority",
+    "claim": "Supervisors are moving toward demonstrable effectiveness testing over framework documentation, and expect independent validation of both control performance and remediation closure. This bears directly on Meridian's claimed remediation closure.",
+    "citation": {
+     "doc_id": "EX-09",
+     "ref": "Financial Crime"
+    }
+   },
+   {
+    "topic": "Consumer and conduct",
+    "claim": "Outcomes-based obligations are extending into legacy and closed-book products, with a heightened expectation around identifying affected customer populations.",
+    "citation": {
+     "doc_id": "EX-09",
+     "ref": "Consumer and Conduct"
+    }
+   },
+   {
+    "topic": "Principal risks",
+    "claim": "The Board-identified principal risks for the coming year are: financial crime (AML/sanctions, especially in Institutional Services, where onboarding grew sharply); operational resilience (concentration on a few critical third-party technology providers); conduct and customer outcomes in Retail Banking (legacy product governance weaknesses); data protection and privacy (cloud migration across jurisdictions); technology change (core platform modernisation); and emerging AI risk, with the governance framework still under development.",
+    "citation": {
+     "doc_id": "CL-01",
+     "ref": "Section 3 \u2014 Principal Risks and Uncertainties"
+    }
+   },
+   {
+    "topic": "Regulatory change burden",
+    "claim": "Management states that the pace of regulatory change (operational resilience, digital operational risk and AI governance) places a material demand on second- and third-line capacity.",
+    "citation": {
+     "doc_id": "CL-01",
+     "ref": "Section 4 \u2014 Regulatory Environment"
+    }
+   },
+   {
+    "topic": "Prior-year risk disclosure",
+    "claim": "FY2024 principal risks were credit, market, operational, financial crime, technology/cyber and regulatory change. Conduct was only an emerging risk, and AI was not a discrete risk category. By FY2025, conduct, AI, operational resilience and data protection had been elevated, showing that the exposure profile had widened.",
+    "citation": {
+     "doc_id": "CL-02",
+     "ref": "Section 3 \u2014 Principal Risks"
+    }
+   }
+  ],
+  "Financial crime remediation status and consistency across sources": [
+   {
+    "topic": "Financial crime remediation status (board minutes)",
+    "claim": "The Board was told that the programme is substantially complete: all twelve high-priority supervisory review findings were remediated and closed, with closure evidence accepted by the second line; three medium-priority findings remain open and are due for closure in the current quarter; and no high-priority findings remain open. The Board recorded its satisfaction and asked that the programme be prepared for formal closure. This is one side of the CL-05 vs external reporting conflict.",
+    "citation": {
+     "doc_id": "CL-05",
+     "ref": "Item 6 \u2014 Financial Crime Remediation Programme"
+    }
+   },
+   {
+    "topic": "Financial crime remediation status (annual report)",
+    "claim": "Management says that 'substantial progress' has been made on the financial crime remediation portfolio, but that certain workstreams remain in delivery and will extend into the next financial year. This is weaker than the board minutes' claim of 'substantially complete' with all high-priority findings closed, and is relevant to the consistency question.",
+    "citation": {
+     "doc_id": "CL-01",
+     "ref": "Section 5 \u2014 Statement on Remediation Activity"
+    }
+   },
+   {
+    "topic": "Financial crime remediation status",
+    "claim": "According to persons familiar with the supervisory dialogue, supervisors do not regard the financial crime remediation programme as complete. Four high-priority findings from the 2024 supervisory review remain open, including beneficial ownership verification for complex fund structures and sanctions screening tuning.",
+    "citation": {
+     "doc_id": "EX-07",
+     "ref": "Remediation Status Questioned"
+    }
+   },
+   {
+    "topic": "CONFLICT: remediation completion claims",
+    "claim": "CONFLICT: The press-reported position (four findings open) is materially different from the Q3 2025 board reporting, which described the programme as substantially complete with all high-priority findings closed. A person close to the supervisor said that some findings reported as closed were reopened after independent validation testing because closure evidence was insufficient. The investor presentation described remediation as 'well advanced and moving to completion'. The Group declined to comment on supervisory correspondence. The claims are unresolved and based on unnamed sources.",
+    "citation": {
+     "doc_id": "EX-07",
+     "ref": "Remediation Status Questioned"
+    }
+   },
+   {
+    "topic": "Remediation status messaging to investors",
+    "claim": "The regulatory remediation agenda is described to investors as \"well advanced and moving to completion\", a softer characterisation than 'complete' and one that is relevant to consistency checks across the board minutes, annual report and press reporting.",
+    "citation": {
+     "doc_id": "CL-10",
+     "ref": "Key Messages to Market"
+    }
+   },
+   {
+    "topic": "Independent validation of remediation closure",
+    "claim": "The client deferred independent validation of financial crime remediation closure pending programme completion, so no independent validation had been commissioned from Protiviti at the time of writing. This contrasts with the claim of closure and with supervisory expectations of independent validation.",
+    "citation": {
+     "doc_id": "PV-09",
+     "ref": "Areas Discussed with the Client"
+    }
+   },
+   {
+    "topic": "Remediation closure assurance",
+    "claim": "In several cases, closure of remediation findings was evidenced by management assertion rather than independent validation, which bears on claims of remediation completion.",
+    "citation": {
+     "doc_id": "EX-02",
+     "ref": "Principal Findings"
+    }
+   },
+   {
+    "topic": "Closure validation methodology",
+    "claim": "Protiviti's approach treats closure validation as a distinct assurance activity. Closure is validated through independent evidence testing rather than management assertion, and a finding is regarded as closed only where the underlying control is demonstrated to operate effectively.",
+    "citation": {
+     "doc_id": "PV-04",
+     "ref": "Closure Validation Principle"
+    }
+   },
+   {
+    "topic": "Follow-up and reporting",
+    "claim": "Phase 5 reports to the accountable committee and validates closure of actions through independent evidence testing rather than management assertion.",
+    "citation": {
+     "doc_id": "PV-04",
+     "ref": "Phase 5 \u2014 Reporting and Follow-Up"
+    }
+   },
+   {
+    "topic": "Remediation closure validation",
+    "claim": "Protiviti observes that growth is often approved on the basis of a remediation programme reported as complete where closure evidence has not been independently validated. Supervisors increasingly test whether control capability was scaled ahead of volume.",
+    "citation": {
+     "doc_id": "PV-08",
+     "ref": "The Pattern We See"
+    }
+   },
+   {
+    "topic": "Good practice / sequencing",
+    "claim": "Good practice includes independent validation of remediation closure before stand-down, a control capacity plan linked to growth with volume triggers, governance as a precondition of deployment, and board reporting that distinguishes management assertion from the independently validated position.",
+    "citation": {
+     "doc_id": "PV-08",
+     "ref": "What Good Looks Like"
+    }
+   },
+   {
+    "topic": "Financial crime assurance gap",
+    "claim": "The sanctions screening tuning audit was deferred at the client's request and carried forward. Protiviti's access to the second-line financial crime team was limited because that scope was retained in-house, so internal audit has limited independent assurance over financial crime. Sanctions screening tuning is one of the findings reported open in EX-07.",
+    "citation": {
+     "doc_id": "PV-05",
+     "ref": "Deferred Audit"
+    }
+   },
+   {
+    "topic": "Risk appetite dependent on remediation claim",
+    "claim": "The Board approved an increase in the onboarding volume appetite threshold in Institutional Services on the basis that financial crime controls had been remediated and assessed as effective. If the remediation claim is overstated, this decision increases financial crime exposure.",
+    "citation": {
+     "doc_id": "CL-05",
+     "ref": "Item 7 \u2014 Risk Appetite Review"
+    }
+   }
+  ],
+  "Regulatory correspondence, peer enforcement read-across and known control gaps": [
+   {
+    "topic": "COVERAGE_GAP_CANDIDATE",
+    "claim": "The Board noted supervisor correspondence received during the quarter, but its content is held in the confidential annex to the minutes and is not reproduced. The substance of this regulatory correspondence is therefore unavailable and may materially affect the exposure assessment.",
+    "citation": {
+     "doc_id": "CL-06",
+     "ref": "Item 7 \u2014 Regulatory Correspondence"
+    }
+   },
+   {
+    "topic": "COVERAGE_GAP_CANDIDATE",
+    "claim": "The report refers to supervisory correspondence and to briefings to the market on the open findings, but neither is reproduced. The claims rest on unnamed sources, and the correspondence itself is not available in this document.",
+    "citation": {
+     "doc_id": "EX-07",
+     "ref": "Remediation Status Questioned"
+    }
+   },
+   {
+    "topic": "Peer enforcement action",
+    "claim": "A comparable mid-size institutional services provider was subject to enforcement action for financial crime failings over a four-year period. It received a financial penalty and was required to appoint an independent skilled person.",
+    "citation": {
+     "doc_id": "EX-03",
+     "ref": "Enforcement Action Summary \u2014 Peer"
+    }
+   },
+   {
+    "topic": "Nature of peer failings",
+    "claim": "The peer expanded its fund services without commensurate financial crime resourcing, held incomplete CDD files for complex structures, and had gone three years without an independent review of its sanctions screening tuning.",
+    "citation": {
+     "doc_id": "EX-03",
+     "ref": "Nature of the Failings"
+    }
+   },
+   {
+    "topic": "Inaccurate board reporting on remediation",
+    "claim": "The peer told its board that a remediation programme was complete, when independent testing found that findings had been closed without adequate evidence. The supervisor called the inaccuracy of internal board reporting the most serious aggravating factor, noting that it delayed corrective action by about 18 months. It said boards must satisfy themselves on closure evidence rather than rely on management assertion.",
+    "citation": {
+     "doc_id": "EX-03",
+     "ref": "Regulatory Commentary"
+    }
+   },
+   {
+    "topic": "Read-across to sector",
+    "claim": "Supervisors have written to firms in the sector asking them to consider the read-across, specifically on remediation closure assurance and the alignment of growth strategy with control capacity. This is a direct read-across for Meridian's claimed remediation completion.",
+    "citation": {
+     "doc_id": "EX-03",
+     "ref": "Read-Across"
+    }
+   },
+   {
+    "topic": "Enforcement read-across",
+    "claim": "Analysts noted that, if confirmed, the discrepancy would echo a recent enforcement action against a peer, in which inaccurate internal reporting to the board was cited as an aggravating factor. This indicates governance and board-reporting exposure.",
+    "citation": {
+     "doc_id": "EX-07",
+     "ref": "Remediation Status Questioned"
+    }
+   },
+   {
+    "topic": "Beneficial ownership weakness",
+    "claim": "Beneficial ownership identification for multi-layered fund structures was inadequate at 9 of the 14 firms reviewed. These firms relied on client attestation beyond the second ownership layer without independent verification.",
+    "citation": {
+     "doc_id": "EX-02",
+     "ref": "Principal Findings"
+    }
+   },
+   {
+    "topic": "EDD and sanctions tuning",
+    "claim": "EDD triggers were applied inconsistently across multi-entity and multi-jurisdiction relationships. At 8 firms, sanctions screening had not been tuned or independently tested within 24 months, and fuzzy matching thresholds lacked documented rationale. This is relevant to Meridian, whose screening tuning was last reviewed in 2023.",
+    "citation": {
+     "doc_id": "EX-02",
+     "ref": "Principal Findings"
+    }
+   },
+   {
+    "topic": "Transaction monitoring and resourcing",
+    "claim": "Transaction monitoring rules were largely legacy and had not been recalibrated to client mix. Financial crime resourcing lagged onboarding growth at 11 firms, and several firms accepted growth targets without a control capacity plan.",
+    "citation": {
+     "doc_id": "EX-02",
+     "ref": "Principal Findings"
+    }
+   },
+   {
+    "topic": "Supervisory expectation",
+    "claim": "Firms should self-assess against the findings and report the outcome to their boards. Firms growing through complex-structure onboarding should evidence that control capability was scaled in advance.",
+    "citation": {
+     "doc_id": "EX-02",
+     "ref": "Supervisory Expectation"
+    }
+   },
+   {
+    "topic": "Second line resourcing gap",
+    "claim": "Second line headcount was 214 against an approved establishment of 247, a gap of 33. The financial crime function has the largest vacancy gap, with 19 unfilled roles. This is a control capacity gap relevant to the remediation and to the exposure.",
+    "citation": {
+     "doc_id": "CL-03",
+     "ref": "Second Line Structure"
+    }
+   },
+   {
+    "topic": "Estate fragmentation and core platform",
+    "claim": "The Group runs 312 applications, 47 of which are business critical. The estate is fragmented as a result of three historic acquisitions, with duplicated core capability in client servicing and payments. Core banking is a legacy on-premise platform scheduled for migration in 2027.",
+    "citation": {
+     "doc_id": "CL-08",
+     "ref": "Estate Summary"
+    }
+   },
+   {
+    "topic": "Core platforms \u2013 data and screening",
+    "claim": "Sanctions screening is run through a third-party vendor solution whose tuning was last reviewed in 2023. Wave one of the data platform cloud migration is delayed to Q2 2026. Fund administration is hosted by a third party in Luxembourg. Two parallel CRM platforms run across the UK and Luxembourg.",
+    "citation": {
+     "doc_id": "CL-08",
+     "ref": "Core Platforms"
+    }
+   },
+   {
+    "topic": "Third-party exit plans and audit rights",
+    "claim": "Supplier A (core hosting) has an exit plan. Supplier B (fund administration) has no documented exit plan. Supplier C (payments and screening) has no documented exit plan and no right-to-audit clause. This conflicts with the regulator's expectation of exit plans for all critical suppliers and of contractual audit rights.",
+    "citation": {
+     "doc_id": "CL-08",
+     "ref": "Critical Third-Party Suppliers"
+    }
+   },
+   {
+    "topic": "Technology control gaps",
+    "claim": "Privileged access review coverage is incomplete in the Asian entities. Vulnerability remediation SLAs were missed in each of the last four quarters. Logging and monitoring do not cover all business-critical applications.",
+    "citation": {
+     "doc_id": "CL-08",
+     "ref": "Known Technology Control Gaps"
+    }
+   },
+   {
+    "topic": "AI governance gap",
+    "claim": "There is no consolidated inventory of models or AI-enabled tooling across the Group, contrary to the regulator's expectation of an AI inventory.",
+    "citation": {
+     "doc_id": "CL-08",
+     "ref": "Known Technology Control Gaps"
+    }
+   },
+   {
+    "topic": "Third-party concentration risk",
+    "claim": "The Group depends on three critical technology suppliers. Exit plans exist for only one of the three, and audit rights and incident notification provisions are inconsistent across the supplier estate. The Board requested a remediation plan by end of Q1 2026.",
+    "citation": {
+     "doc_id": "CL-06",
+     "ref": "Item 5 \u2014 Third-Party Risk"
+    }
+   },
+   {
+    "topic": "Technology and cyber control gaps",
+    "claim": "Security baselines are applied inconsistently across regional entities, with the Asian entities materially behind. Vulnerability remediation is weak, with service levels repeatedly missed. Identity and access management is fragmented, with no single view of privileged access.",
+    "citation": {
+     "doc_id": "PV-05",
+     "ref": "Principal Themes Reported"
+    }
+   },
+   {
+    "topic": "Third-party risk",
+    "claim": "Third-party exit planning is absent for two of the three critical suppliers, which is relevant to the Q4 2025 hosting provider outage.",
+    "citation": {
+     "doc_id": "PV-05",
+     "ref": "Principal Themes Reported"
+    }
+   }
+  ],
+  "Governance, three lines and internal audit": [
+   {
+    "topic": "Governance structure",
+    "claim": "In FY2024 the Board had eleven directors, six of whom were independent NEDs. The Audit Committee met seven times and the Risk Committee six times. The Group operated a three lines of defence model, with Internal Audit reporting functionally to the Audit Committee Chair.",
+    "citation": {
+     "doc_id": "CL-02",
+     "ref": "Section 5 \u2014 Governance"
+    }
+   },
+   {
+    "topic": "CRO vacancy and leadership",
+    "claim": "The Group CRO position has been vacant since November 2025, with Deputy CRO Hannah Okafor providing interim cover. The new CEO, Alanna Reyes, was appointed in February 2026 with a mandate that includes completing the regulatory remediation agenda.",
+    "citation": {
+     "doc_id": "CL-03",
+     "ref": "Executive Committee"
+    }
+   },
+   {
+    "topic": "Accountability for remediation and modernisation",
+    "claim": "Group Head of Compliance Martin Ashby is accountable for the financial crime remediation portfolio, and COO Devan Mistry is accountable for the core platform modernisation programme. The CTO is Sofia Lindqvist, appointed in 2024.",
+    "citation": {
+     "doc_id": "CL-03",
+     "ref": "Executive Committee"
+    }
+   },
+   {
+    "topic": "CRO succession",
+    "claim": "The Board discussed the forthcoming departure of the Group CRO, agreed to initiate an external search and approved interim arrangements. This is a governance gap in second line leadership.",
+    "citation": {
+     "doc_id": "CL-05",
+     "ref": "Item 9 \u2014 Chief Risk Officer Succession"
+    }
+   },
+   {
+    "topic": "Risk Committee mandate",
+    "claim": "The Risk Committee oversees the risk management framework and risk appetite. It monitors principal risks including financial crime, operational resilience, technology and cyber, conduct, and regulatory compliance. It also reviews risk and compliance resourcing and oversees emerging risks, including AI. It has five members, four of whom are independent NEDs, and meets at least six times a year.",
+    "citation": {
+     "doc_id": "CL-07",
+     "ref": "Responsibilities"
+    }
+   },
+   {
+    "topic": "CRO attendance gap",
+    "claim": "The Group CRO normally attends all meetings; in the absence of a permanent appointment, the Deputy CRO attends.",
+    "citation": {
+     "doc_id": "CL-07",
+     "ref": "Composition and Meetings"
+    }
+   },
+   {
+    "topic": "Executive forums and AI governance gap",
+    "claim": "The Committee is supported by four executive forums: the Group Risk Management Committee, the Financial Crime Committee, the Technology and Operational Resilience Committee, and the Conduct and Customer Outcomes Forum. The AI governance forum referenced in the Group strategy has not yet been constituted.",
+    "citation": {
+     "doc_id": "CL-07",
+     "ref": "Governance Structure Beneath the Committee"
+    }
+   },
+   {
+    "topic": "Known governance gaps",
+    "claim": "The FY2025 effectiveness review identified three gaps: inconsistent risk reporting across regional entities, limited aggregation of third-party risk data, and the absence of a defined framework for AI governance.",
+    "citation": {
+     "doc_id": "CL-07",
+     "ref": "Known Gaps"
+    }
+   },
+   {
+    "topic": "Third line capacity",
+    "claim": "Group Internal Audit has 41 practitioners and has historically co-sourced specialist technology, cyber and financial crime audit work. Given the expanded FY2026 plan, the Audit Committee has asked management to review the sustainability of the co-source arrangement.",
+    "citation": {
+     "doc_id": "CL-03",
+     "ref": "Third Line Structure"
+    }
+   },
+   {
+    "topic": "Internal audit plan FY2026",
+    "claim": "The FY2026 plan expands coverage of financial crime, operational resilience, third-party management, cloud security and AI governance. The Chief Internal Auditor said that full delivery requires specialist resource beyond the current establishment, and that a co-source arrangement is being considered.",
+    "citation": {
+     "doc_id": "CL-06",
+     "ref": "Item 6 \u2014 Internal Audit Plan FY2026"
+    }
+   },
+   {
+    "topic": "Internal audit plan scope",
+    "claim": "The FY2026 plan comprises 38 audits, built on a risk basis with reference to principal risks, supervisory priorities, prior findings and the change portfolio.",
+    "citation": {
+     "doc_id": "CL-09",
+     "ref": "Planning Basis"
+    }
+   },
+   {
+    "topic": "Thematic coverage",
+    "claim": "The plan covers financial crime (CDD, EDD, sanctions screening tuning, transaction monitoring, and closure validation of remediation), operational resilience, third-party risk (including exit planning and concentration), technology/cyber, core platform modernisation assurance, conduct, and data/privacy.",
+    "citation": {
+     "doc_id": "CL-09",
+     "ref": "Thematic Coverage"
+    }
+   },
+   {
+    "topic": "AI governance audit deferred",
+    "claim": "The AI governance readiness review is deferred pending establishment of the framework. As a result, AI has no assurance coverage in FY2026, despite the supervisor's AI expectations.",
+    "citation": {
+     "doc_id": "CL-09",
+     "ref": "Thematic Coverage"
+    }
+   },
+   {
+    "topic": "Audit resourcing shortfall",
+    "claim": "The plan requires about 6,200 audit days against internal capacity of 4,900. The shortfall of roughly 1,300 days is to be met through co-sourcing, mainly in cyber, cloud, financial crime and resilience.",
+    "citation": {
+     "doc_id": "CL-09",
+     "ref": "Resourcing"
+    }
+   },
+   {
+    "topic": "Deferred audits carried forward",
+    "claim": "Four FY2025 audits were deferred into FY2026: sanctions screening tuning, Hong Kong entity governance, model risk management and third-party exit planning. These match known gaps in CL-08 and the supervisory priorities.",
+    "citation": {
+     "doc_id": "CL-09",
+     "ref": "Prior Year Carry-Forward"
+    }
+   },
+   {
+    "topic": "Internal audit coverage",
+    "claim": "In year one of a two-year internal audit co-source, 14 of 15 planned audits were delivered, with one deferred at the client's request. Delivered audits covered cloud security (UK and Luxembourg), identity and access management, vulnerability management, third-party onboarding and monitoring, data protection and cross-border transfers, and change management over modernisation phase one, plus eight further technology audits.",
+    "citation": {
+     "doc_id": "PV-05",
+     "ref": "Audits Delivered"
+    }
+   },
+   {
+    "topic": "Open items / engagement continuity",
+    "claim": "The client had not confirmed whether the FY2026 co-source arrangement would be extended, expanded to include financial crime disciplines, or re-tendered.",
+    "citation": {
+     "doc_id": "PV-09",
+     "ref": "Open Items at Time of Writing"
+    }
+   },
+   {
+    "topic": "Modernisation programme",
+    "claim": "Programme assurance over the modernisation programme found optimistic milestone reporting and insufficient independent challenge of status.",
+    "citation": {
+     "doc_id": "PV-05",
+     "ref": "Principal Themes Reported"
+    }
+   },
+   {
+    "topic": "Relationship observations",
+    "claim": "Engagement was strongest with the Chief Internal Auditor and the CTO. Scheduling was disrupted twice by client resource availability.",
+    "citation": {
+     "doc_id": "PV-05",
+     "ref": "Relationship Observations"
+    }
+   }
+  ],
+  "Operational resilience, third-party, consumer outcomes, data/AI and platform modernisation": [
+   {
+    "topic": "Operational resilience gaps",
+    "claim": "The Group had identified its important business services but was still setting impact tolerances. Mapping of third-party dependencies for the four most critical services remained incomplete, and the Board requested a further update.",
+    "citation": {
+     "doc_id": "CL-05",
+     "ref": "Item 8 \u2014 Operational Resilience"
+    }
+   },
+   {
+    "topic": "Service disruption / third-party risk",
+    "claim": "In Q4 2025, Meridian suffered a disruption of approximately 31 hours to its client servicing platforms (retail and institutional), attributed to a failure at a third-party hosting provider. The Group stated that no client data was compromised and that the incident was reported to supervisors.",
+    "citation": {
+     "doc_id": "EX-07",
+     "ref": "Remediation Status Questioned"
+    }
+   },
+   {
+    "topic": "Core platform modernisation delay",
+    "claim": "The programme is about four months behind baseline. Wave one of the data platform migration has slipped to Q2 2026, and forecast spend has risen by GBP 14m.",
+    "citation": {
+     "doc_id": "CL-06",
+     "ref": "Item 4 \u2014 Core Platform Modernisation Programme"
+    }
+   },
+   {
+    "topic": "Core platform modernisation",
+    "claim": "FY2024 saw the announcement of a multi-year modernisation of the core banking and client servicing platform, with an indicative investment of GBP 180m over four years. It also announced the expansion of Institutional Services in fund administration and depositary services in Luxembourg and Singapore.",
+    "citation": {
+     "doc_id": "CL-02",
+     "ref": "Section 4 \u2014 Strategic Commentary"
+    }
+   },
+   {
+    "topic": "Technology modernisation",
+    "claim": "The plan is to migrate core banking, client servicing and data platforms to cloud by end 2028, decommissioning fourteen legacy applications. Milestones include the 2026 cloud landing zone and onboarding workflow replacement, and core banking migration waves one and two in 2027. The programme creates technology and operational resilience/third-party exposure.",
+    "citation": {
+     "doc_id": "CL-04",
+     "ref": "Technology Roadmap Summary"
+    }
+   },
+   {
+    "topic": "Cloud posture and IAM",
+    "claim": "About 34% of workloads are cloud-hosted. Cloud security baselines are defined but not consistently applied across regional entities. Identity and access management is federated in the UK but separate in Singapore and Hong Kong.",
+    "citation": {
+     "doc_id": "CL-08",
+     "ref": "Cloud Posture"
+    }
+   },
+   {
+    "topic": "Consumer outcomes and redress",
+    "claim": "A GBP 31m provision has been recognised for the legacy product governance review in Retail Banking. The review of affected customers is ongoing and the final redress population has not been determined, so the redress cost could increase.",
+    "citation": {
+     "doc_id": "CL-06",
+     "ref": "Item 8 \u2014 Consumer Outcomes"
+    }
+   },
+   {
+    "topic": "Redress provision",
+    "claim": "Management stated that the redress population remains under review and that a further provision cannot be ruled out.",
+    "citation": {
+     "doc_id": "CL-10",
+     "ref": "Analyst Question and Answer Summary"
+    }
+   },
+   {
+    "topic": "AI governance gap",
+    "claim": "Management acknowledges that the Group has no approved AI governance framework, AI inventory, or defined model risk controls covering generative AI; these are prerequisites to deployment beyond pilot scale. AI is planned across onboarding document triage, adviser knowledge assistance, and internal audit and risk analytics.",
+    "citation": {
+     "doc_id": "CL-04",
+     "ref": "Artificial Intelligence Ambition"
+    }
+   },
+   {
+    "topic": "Resilience and third-party gaps",
+    "claim": "Operational resilience dependency mapping is to be delivered internally first. Third-party exit planning for critical suppliers was scoped but not commissioned, and AI governance framework design was discussed with the CTO only at an exploratory level.",
+    "citation": {
+     "doc_id": "PV-09",
+     "ref": "Areas Discussed with the Client"
+    }
+   },
+   {
+    "topic": "Growth and onboarding volume",
+    "claim": "The strategy targets a doubling of fund administration and depositary revenue by 2028, focused on Luxembourg and Singapore. This is expected to increase onboarding volumes of complex corporate and fund structures by approximately 140 per cent, increasing the financial crime control load.",
+    "citation": {
+     "doc_id": "CL-04",
+     "ref": "Four Strategic Pillars"
+    }
+   },
+   {
+    "topic": "Strategy dependencies",
+    "claim": "The strategy is explicitly dependent on completion of the financial crime remediation portfolio, a group-wide operational resilience capability meeting supervisory expectations, and recruitment into the second-line vacancy gap. Failure to complete remediation would constrain regulatory approval for expansion of the Luxembourg and Singapore entities.",
+    "citation": {
+     "doc_id": "CL-04",
+     "ref": "Dependencies and Enablers"
+    }
+   },
+   {
+    "topic": "Cost-to-income target",
+    "claim": "The strategy targets a 62 per cent cost-to-income ratio by 2028 through automation, standardisation and consolidation into two hubs, which may put pressure on control investment.",
+    "citation": {
+     "doc_id": "CL-04",
+     "ref": "Four Strategic Pillars"
+    }
+   },
+   {
+    "topic": "Control capacity vs growth",
+    "claim": "Control resourcing plans commonly lag the commercial plan by 12\u201318 months, making control capacity the binding constraint on growth in regulated activity.",
+    "citation": {
+     "doc_id": "PV-08",
+     "ref": "Three Failure Modes"
+    }
+   },
+   {
+    "topic": "AI governance",
+    "claim": "A recognised failure mode is the constitution of governance forums after deployment rather than before, most visibly in AI adoption.",
+    "citation": {
+     "doc_id": "PV-08",
+     "ref": "Three Failure Modes"
+    }
+   }
+  ],
+  "Peer comparison, market commentary and sequencing": [
+   {
+    "topic": "Sector context",
+    "claim": "The sector faces margin pressure, high compliance costs and technology debt from consolidation, with mid-size firms disproportionately affected.",
+    "citation": {
+     "doc_id": "EX-04",
+     "ref": "Macro Context"
+    }
+   },
+   {
+    "topic": "Top risk themes",
+    "claim": "The top risk themes are: financial crime control effectiveness (especially given growth in complex structures and higher-risk jurisdictions); operational resilience and concentration on critical providers; cyber risk (credential and third-party compromise); conduct and legacy product remediation (with redress often revised upward); technology transformation slippage; AI governance lagging deployment; and talent scarcity in second-line and financial crime roles.",
+    "citation": {
+     "doc_id": "EX-04",
+     "ref": "Top Risk Themes"
+    }
+   },
+   {
+    "topic": "Sequencing of growth and remediation",
+    "claim": "Firms that pursue growth ahead of completing control remediation are materially more likely to face supervisory intervention. The sequencing of strategy and control investment is emerging as a differentiator of supervisory outcome.",
+    "citation": {
+     "doc_id": "EX-04",
+     "ref": "Observation on Sequencing"
+    }
+   },
+   {
+    "topic": "Peer comparison / financial position",
+    "claim": "Meridian's cost-to-income ratio deteriorated year on year and is above the peer median. Its 2028 efficiency target depends on sustained delivery of a technology programme that is already reporting slippage.",
+    "citation": {
+     "doc_id": "EX-08",
+     "ref": "Implications for Meridian"
+    }
+   },
+   {
+    "topic": "Regulatory overhang",
+    "claim": "Financial crime regulatory overhang is likely to constrain inorganic options and the approval of entity expansion. Growth in institutional services concentrates the Group in the activity that attracts the greatest supervisory scrutiny.",
+    "citation": {
+     "doc_id": "EX-08",
+     "ref": "Implications for Meridian"
+    }
+   },
+   {
+    "topic": "Market view on control agenda",
+    "claim": "The analyst regards execution of the control agenda as the principal determinant of the equity story. Firms in this position typically increase spend on external assurance and specialist advisory support during remediation and validation. The sector faces consolidation over the next 36 months.",
+    "citation": {
+     "doc_id": "EX-08",
+     "ref": "View"
+    }
+   },
+   {
+    "topic": "Analyst concerns",
+    "claim": "Analysts questioned management on the sustainability of cost reduction given programme delays, on the size and certainty of the legacy redress provision, and on the regulatory position on financial crime controls.",
+    "citation": {
+     "doc_id": "CL-10",
+     "ref": "Analyst Question and Answer Summary"
+    }
+   },
+   {
+    "topic": "Regulatory cost guidance",
+    "claim": "Management guided that elevated regulatory and remediation costs will continue through FY2026, moderating thereafter.",
+    "citation": {
+     "doc_id": "CL-10",
+     "ref": "Guidance"
+    }
+   },
+   {
+    "topic": "Technology programme delays",
+    "claim": "Technology modernisation is described as on track to deliver a 62% cost-to-income ratio by 2028, although analysts referenced programme delays.",
+    "citation": {
+     "doc_id": "CL-10",
+     "ref": "Key Messages to Market"
+    }
+   },
+   {
+    "topic": "Financial impact of regulatory exposure",
+    "claim": "Profit before tax fell to GBP 214m from GBP 241m, cost-to-income rose to 71.2% from 67.8%, and CET1 fell to 14.1% from 14.9%. The decline is attributed principally to elevated regulatory remediation costs, technology investment and a GBP 31m legacy customer redress provision in Retail Banking.",
+    "citation": {
+     "doc_id": "CL-01",
+     "ref": "Section 2 \u2014 Financial Highlights"
+    }
+   },
+   {
+    "topic": "Financial baseline",
+    "claim": "FY2024 profit before tax was GBP 241m, cost-to-income was 67.8%, CET1 was 14.9% and total income was GBP 1,196m, with 1.7m customer accounts. This is the baseline against which the FY2025 deterioration is measured.",
+    "citation": {
+     "doc_id": "CL-02",
+     "ref": "Section 2 \u2014 Financial Highlights"
+    }
+   },
+   {
+    "topic": "Scale and segments",
+    "claim": "Meridian is a London-headquartered group with about 4,800 staff and GBP 91.4bn of AUA, operating in the UK, Ireland, Luxembourg, Singapore and Hong Kong. Its segments are Wealth & Asset Management (46%), Retail Banking (34%) and Institutional Services (20%).",
+    "citation": {
+     "doc_id": "CL-01",
+     "ref": "Section 1 \u2014 Group Overview"
+    }
+   },
+   {
+    "topic": "Protiviti service catalogue (limited relevance)",
+    "claim": "The catalogue lists capabilities relevant to Meridian's exposure areas: financial crime remediation and independent closure validation, sanctions tuning review, operational resilience, third-party exit planning, conduct/redress and AI governance. It is a services description, not evidence of Meridian's actual exposures.",
+    "citation": {
+     "doc_id": "PV-07",
+     "ref": "Risk and Compliance"
+    }
+   }
+  ],
+  "Recommended Engagement Focus Areas": [
+   {
+    "topic": "Remediation status conflict",
+    "claim": "Priority should be given to establishing the true state of the financial crime remediation programme. Press reporting says supervisors regard four high-priority findings as open, including beneficial ownership verification and sanctions tuning. This directly contradicts board minutes, which report no high-priority findings open. The conflict is unresolved and is the single largest driver of regulatory exposure.",
+    "citation": {
+     "doc_id": "EX-07",
+     "ref": "Remediation Status Questioned"
+    }
+   },
+   {
+    "topic": "Independent closure validation",
+    "claim": "Independent validation of remediation closure is recommended as an immediate priority. The Protiviti discussion note records that the client deferred independent validation pending programme completion, so none has been commissioned. Supervisors expect independent testing, and some findings reportedly reopened after validation testing.",
+    "citation": {
+     "doc_id": "PV-09",
+     "ref": "Areas Discussed with the Client"
+    }
+   },
+   {
+    "topic": "Board reporting accuracy",
+    "claim": "Attention should focus on the accuracy and evidence basis of board reporting on remediation. A peer enforcement action treated inaccurate board reporting as the most serious aggravating factor and delayed corrective action by about 18 months. Supervisors said boards must not rely on management assertion. Meridian's board minutes show a similar 'substantially complete' claim, and supervisors have written to the sector asking firms to consider this read-across.",
+    "citation": {
+     "doc_id": "EX-03",
+     "ref": "Regulatory Commentary"
+    }
+   },
+   {
+    "topic": "Growth versus control capacity",
+    "claim": "The Board's decision to raise Institutional Services onboarding appetite should be re-examined. It rested on the premise that financial crime controls had been remediated and assessed as effective. If that premise is overstated, the decision increases exposure, and supervisors expect control capability to be scaled ahead of growth.",
+    "citation": {
+     "doc_id": "CL-05",
+     "ref": "Item 7 \u2014 Risk Appetite Review"
+    }
+   },
+   {
+    "topic": "Financial crime resourcing",
+    "claim": "The second-line resourcing shortfall should be assessed: the financial crime function carries the largest vacancy gap, with 19 unfilled roles. This sits against a strategy that expects onboarding volumes of complex structures to rise by about 140 per cent. Peer failings and sector reviews show resourcing lagging onboarding growth.",
+    "citation": {
+     "doc_id": "CL-03",
+     "ref": "Second Line Structure"
+    }
+   },
+   {
+    "topic": "Sanctions screening tuning",
+    "claim": "Sanctions screening tuning should be tested as a specific control gap. The vendor solution was last tuned in 2023, which is outside the 24-month window that thematic review findings treated as a weakness. The tuning audit was deferred, and tuning is one of the findings reported open in the press.",
+    "citation": {
+     "doc_id": "EX-02",
+     "ref": "Principal Findings"
+    }
+   },
+   {
+    "topic": "Third-party exit plans and audit rights",
+    "claim": "Remediation of third-party gaps should be prioritised. Two of three critical suppliers lack documented exit plans, and the payments and screening supplier also has no right-to-audit clause. This contradicts regulatory expectations, and the Q4 2025 hosting outage shows that the exposure has already materialised.",
+    "citation": {
+     "doc_id": "CL-08",
+     "ref": "Critical Third-Party Suppliers"
+    }
+   },
+   {
+    "topic": "Operational resilience mapping",
+    "claim": "Incomplete operational resilience dependency mapping should be followed up. Impact tolerances were still being set, and third-party mapping for the four most critical services was incomplete. The supervisory notice calls incomplete mapping a material shortcoming.",
+    "citation": {
+     "doc_id": "CL-05",
+     "ref": "Item 8 \u2014 Operational Resilience"
+    }
+   },
+   {
+    "topic": "AI governance and assurance",
+    "claim": "AI governance should be highlighted as an unmitigated exposure. There is no AI inventory or approved framework, the governance forum is not constituted, and the FY2026 audit is deferred, so there is no assurance coverage. Supervisors say deployment should not scale ahead of governance, yet AI use is planned in onboarding.",
+    "citation": {
+     "doc_id": "CL-09",
+     "ref": "Thematic Coverage"
+    }
+   },
+   {
+    "topic": "Redress exposure",
+    "claim": "Legacy product redress should be monitored, as the GBP 31m provision may rise. The affected population is undetermined, and management cannot rule out a further provision. Market commentary notes that redress is often revised upward, and supervisors expect firms to identify affected populations, including those on legacy products.",
+    "citation": {
+     "doc_id": "CL-10",
+     "ref": "Analyst Question and Answer Summary"
+    }
+   },
+   {
+    "topic": "Leadership and second-line gaps",
+    "claim": "The CRO vacancy should be weighed as a governance exposure. The CRO role has been vacant since November 2025, with interim cover in place, while the new CEO's mandate includes completing remediation. This weakens second-line challenge at a critical point.",
+    "citation": {
+     "doc_id": "CL-03",
+     "ref": "Executive Committee"
+    }
+   },
+   {
+    "topic": "Internal audit independence and capacity",
+    "claim": "The limits on independent assurance should be addressed. The audit plan requires about 1,300 more days than internal capacity provides, to be met through co-sourcing. Protiviti's access to second-line financial crime was limited, and the client has not confirmed whether the co-source arrangement will extend to financial crime.",
+    "citation": {
+     "doc_id": "CL-09",
+     "ref": "Resourcing"
+    }
+   },
+   {
+    "topic": "Modernisation programme risk",
+    "claim": "The modernisation programme should be examined as a compounding exposure. It is about four months behind schedule with a GBP 14m forecast overspend. Assurance found optimistic milestone reporting, and the 2028 cost-to-income target depends on the programme.",
+    "citation": {
+     "doc_id": "PV-05",
+     "ref": "Principal Themes Reported"
+    }
+   },
+   {
+    "topic": "Undisclosed supervisory correspondence",
+    "claim": "Access should be sought to the confidential annex covering supervisor correspondence, because its content could materially change the exposure assessment. Both the board minutes and the press report refer to it without reproducing it.",
+    "citation": {
+     "doc_id": "CL-06",
+     "ref": "Item 7 \u2014 Regulatory Correspondence"
+    }
+   }
+  ]
+ },
+ "conflicts": [
+  {
+   "subject": "Financial crime remediation completion status",
+   "position_a": {
+    "citation": {
+     "doc_id": "CL-05",
+     "ref": "Item 6 \u2014 Financial Crime Remediation Programme"
+    },
+    "position": "Board minutes report the programme as substantially complete: all twelve high-priority findings remediated and closed with closure evidence accepted by second line, none high-priority open, only three medium-priority open."
+   },
+   "position_b": {
+    "citation": {
+     "doc_id": "EX-07",
+     "ref": "Remediation Status Questioned"
+    },
+    "position": "Press report citing unnamed sources says supervisors do not regard the programme as complete and four high-priority findings from the 2024 review remain open, including beneficial ownership verification and sanctions screening tuning."
+   },
+   "resolution_basis": "unresolved",
+   "resolution_note": "The board minutes are a primary internal record, while the press account relies on unnamed sources and the underlying supervisory correspondence is not available. Other evidence points toward the press view without proving it: independent validation was never commissioned, the sanctions tuning audit was deferred, and the annual report uses weaker wording than the minutes. None of this verifies either count of open findings, so no side can be chosen."
+  },
+  {
+   "subject": "Whether remediation is 'substantially complete' versus still in delivery",
+   "position_a": {
+    "citation": {
+     "doc_id": "CL-05",
+     "ref": "Item 6 \u2014 Financial Crime Remediation Programme"
+    },
+    "position": "Board minutes say the programme is substantially complete and ready to be prepared for formal closure."
+   },
+   "position_b": {
+    "citation": {
+     "doc_id": "CL-01",
+     "ref": "Section 5 \u2014 Statement on Remediation Activity"
+    },
+    "position": "The annual report says only 'substantial progress' has been made and that certain remediation workstreams remain in delivery and will extend into the next financial year."
+   },
+   "resolution_basis": "unresolved",
+   "resolution_note": "Both are management statements from Meridian, and the wording differs in degree (complete versus in delivery into next year). The documents do not show which reflects the actual position, and the differing audiences and dates do not establish that one supersedes the other."
+  }
+ ],
+ "gaps": [
+  {
+   "description": "The content of the supervisor correspondence noted by the Board during the quarter could not be established. The minutes record only that correspondence was received; its substance sits in a confidential annex that is not reproduced.",
+   "reason": "relevant content referenced but withheld within an otherwise-readable source",
+   "source_doc_id": "CL-06",
+   "confidence_impact": "Any assessment of Meridian's regulatory exposure may omit material supervisory concerns, enforcement signals or deadlines. Confidence is reduced on the overall exposure ranking and on whether the remediation claims are consistent with the supervisor's own position."
+  },
+  {
+   "description": "The supervisory correspondence and market briefings behind the press report that four high-priority findings remain open could not be seen. The report rests on unnamed sources and the underlying documents are not reproduced, so the actual number of open high-priority findings cannot be verified.",
+   "reason": "relevant content referenced but withheld within an otherwise-readable source",
+   "source_doc_id": "EX-07",
+   "confidence_impact": "The conflict between the board minutes (none high-priority open) and the press report (four open) stays unresolved. Corroborating signals point toward the press view: independent validation was never commissioned, the sanctions tuning audit was deferred, and the annual report uses weaker wording. None of these verifies either count, so confidence in any statement of the true remediation status is low."
+  },
+  {
+   "description": "PV-06 is a valid document that yielded no extractable text. Whatever it contains could not be assessed and was not used for any finding, and its subject matter is not identified in the evidence provided.",
+   "reason": "source processed but contained no extractable content",
+   "source_doc_id": "PV-06",
+   "confidence_impact": "Evidence that PV-06 might have contributed could not be weighed, so the assessment may be incomplete. The size of this effect is unknown because the document's relevance is unknown."
+  },
+  {
+   "description": "No source gives an independent, validated count or status of the financial crime remediation findings. The only independent-validation evidence is that closure validation was deferred by the client and never commissioned. Whether findings were reopened after validation testing rests on a single unnamed source in the press.",
+   "reason": "no source in the corpus addresses this sub-topic",
+   "source_doc_id": null,
+   "confidence_impact": "The claim that remediation is substantially complete can be neither confirmed nor refuted. Exposure from the Institutional Services onboarding appetite increase, which was approved on the strength of that claim, cannot be sized."
+  },
+  {
+   "description": "No source quantifies the likelihood or size of potential enforcement or penalty exposure for Meridian, or the final redress population and cost. The peer enforcement case is only a read-across. The GBP 31m provision is explicitly open-ended, and no source gives a range for further redress.",
+   "reason": "no source in the corpus addresses this sub-topic",
+   "source_doc_id": null,
+   "confidence_impact": "Exposures can be ranked qualitatively but not quantified. Confidence is moderate for the direction of exposure and low for its financial magnitude."
+  },
+  {
+   "description": "EX-05 and EX-06 are listed as consulted with status ok, but no findings from either were supplied. Their content, and any bearing on peer positioning or regulatory exposure, could not be assessed. The same applies to PV-01, PV-02 and PV-03.",
+   "reason": "no source in the corpus addresses this sub-topic",
+   "source_doc_id": null,
+   "confidence_impact": "Peer comparison and market-commentary coverage may be thinner than the corpus allows. Confidence is slightly reduced for sections drawing on external commentary."
+  }
+ ],
+ "sources_consulted": [
+  {
+   "doc_id": "CL-01",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "CL-02",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "CL-03",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "CL-04",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "CL-05",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "CL-06",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "CL-07",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "CL-08",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "CL-09",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "CL-10",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "EX-01",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "EX-02",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "EX-03",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "EX-04",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "EX-05",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "EX-06",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "EX-07",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "EX-08",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "EX-09",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "PV-01",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "PV-02",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "PV-03",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "PV-04",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "PV-05",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "PV-06",
+   "status": "processed \u2014 no extractable content",
+   "note": ""
+  },
+  {
+   "doc_id": "PV-07",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "PV-08",
+   "status": "ok",
+   "note": ""
+  },
+  {
+   "doc_id": "PV-09",
+   "status": "ok",
+   "note": ""
+  }
+ ]
+}
