@@ -1,0 +1,9 @@
+anthropic>=0.75
+azure-identity>=1.25
+python-dotenv>=1.1
+claude-agent-sdk>=0.2.176
+python-docx>=1.1
+openpyxl>=3.1
+pypdf>=5.0
+fastapi>=0.110
+uvicorn>=0.29
